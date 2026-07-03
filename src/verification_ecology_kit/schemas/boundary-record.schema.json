@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/boundary-record.schema.json",
+  "type": "object",
+  "properties": {
+    "boundary_id": { "type": "string" },
+    "predicate": { "type": "string" },
+    "destructive_predicate": { "type": "string" },
+    "narrowing_predicate": { "type": "string" },
+    "irreversible_modes": { "type": "array", "items": { "type": "string" } },
+    "boundary_assumptions": { "type": "array", "items": { "type": "string" } },
+    "aperture_loss_modes": { "type": "array", "items": { "type": "string" } },
+    "translation_loss_modes": { "type": "array", "items": { "type": "string" } },
+    "residual_loss_modes": { "type": "array", "items": { "type": "string" } },
+    "question_form_loss_modes": { "type": "array", "items": { "type": "string" } },
+    "reachability_certificate_refs": { "type": "array", "items": { "type": "string" } },
+    "unexcluded_residuals": { "type": "array", "items": { "type": "string" } },
+    "invalidation_conditions": { "type": "array", "items": { "type": "string" } },
+    "recheck_trigger": { "type": "string" },
+    "provenance": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "boundary_id",
+    "predicate",
+    "reachability_certificate_refs",
+    "unexcluded_residuals",
+    "invalidation_conditions",
+    "recheck_trigger",
+    "provenance"
+  ],
+  "additionalProperties": true
+}

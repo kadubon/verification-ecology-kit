@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/verifier-packet.schema.json",
+  "type": "object",
+  "properties": {
+    "packet_id": { "type": "string" },
+    "origin": {
+      "type": ["object", "null"],
+      "properties": {
+        "created_from": {
+          "type": "string",
+          "enum": [
+            "failure",
+            "success",
+            "counterexample",
+            "residual",
+            "contrast",
+            "external_packet",
+            "human_specification"
+          ]
+        },
+        "traces": { "type": "array", "items": { "type": "string" } },
+        "lineage": { "type": "array", "items": { "type": "string" } },
+        "unresolved_origin_residuals": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["created_from", "traces", "lineage", "unresolved_origin_residuals"],
+      "additionalProperties": false
+    },
+    "scope": { "type": ["object", "null"] },
+    "transformation_class": { "type": ["object", "null"] },
+    "verifier_procedure": { "type": ["object", "null"] },
+    "certification_condition": { "type": ["object", "null"] },
+    "boundary_refs": { "type": ["object", "null"] },
+    "residual_hooks": { "type": ["object", "null"] },
+    "update_profile": { "type": ["object", "null"] },
+    "circulation_status": { "type": ["object", "null"] },
+    "question_form": { "type": "object" },
+    "extension": { "type": "object" },
+    "residual_obligations": { "type": "array" },
+    "counter_packet_refs": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "packet_id",
+    "origin",
+    "scope",
+    "transformation_class",
+    "verifier_procedure",
+    "certification_condition",
+    "boundary_refs",
+    "residual_hooks",
+    "update_profile",
+    "circulation_status",
+    "question_form",
+    "extension",
+    "residual_obligations",
+    "counter_packet_refs"
+  ],
+  "additionalProperties": false
+}

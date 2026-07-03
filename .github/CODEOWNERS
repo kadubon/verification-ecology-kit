@@ -1,0 +1,7 @@
+.github/workflows/* @kadubon
+pyproject.toml @kadubon
+security/* @kadubon
+src/verification_ecology_kit/audit/security.py @kadubon
+src/verification_ecology_kit/audit/local_info.py @kadubon
+docs/pyproject-publishing.md @kadubon
+SECURITY.md @kadubon

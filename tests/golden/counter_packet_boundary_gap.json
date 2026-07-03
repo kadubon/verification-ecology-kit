@@ -1,0 +1,6 @@
+{
+  "case_id": "counter-packet-boundary-gap",
+  "kind": "counter-packet",
+  "expected_issue": "boundary bypass or missing boundary record",
+  "expected_residual_kind": "unexcluded"
+}

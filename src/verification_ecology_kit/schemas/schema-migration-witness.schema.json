@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/schema-migration-witness.schema.json",
+  "type": "object",
+  "properties": {
+    "migration_witness_id": { "type": "string" },
+    "from_schema_version": { "type": "string" },
+    "to_schema_version": { "type": "string" },
+    "field_mapping_ref": { "$ref": "vet-object-ref.schema.json" },
+    "transformed_object_ref": { "$ref": "vet-object-ref.schema.json" },
+    "source_digest": { "type": "object" },
+    "target_digest": { "type": "object" },
+    "loss_residual_refs": { "type": "array", "items": { "type": "string" } },
+    "migration_judgment_ref": { "type": "string" },
+    "status": { "type": "string", "enum": ["active", "stale", "revoked", "migrated", "unknown"] }
+  },
+  "required": [
+    "migration_witness_id",
+    "from_schema_version",
+    "to_schema_version",
+    "field_mapping_ref",
+    "transformed_object_ref",
+    "source_digest",
+    "target_digest",
+    "loss_residual_refs",
+    "migration_judgment_ref",
+    "status"
+  ],
+  "additionalProperties": false
+}

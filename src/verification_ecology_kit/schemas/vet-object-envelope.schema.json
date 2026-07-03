@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/vet-object-envelope.schema.json",
+  "type": "object",
+  "properties": {
+    "object_id": { "type": "string" },
+    "schema_id": { "type": "string" },
+    "schema_version": { "type": "string" },
+    "canonical_digest": { "$ref": "#/$defs/digest" },
+    "status_ref": {
+      "anyOf": [
+        { "$ref": "vet-object-ref.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "provenance": { "type": "array", "items": { "type": "string" } },
+    "residual_refs": {
+      "type": "array",
+      "items": { "$ref": "vet-object-ref.schema.json" }
+    },
+    "payload": { "type": "object" }
+  },
+  "required": [
+    "object_id",
+    "schema_id",
+    "schema_version",
+    "canonical_digest",
+    "status_ref",
+    "provenance",
+    "residual_refs",
+    "payload"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "digest": {
+      "type": "object",
+      "properties": {
+        "algorithm_id": { "type": "string" },
+        "value": { "type": "string" }
+      },
+      "required": ["algorithm_id", "value"],
+      "additionalProperties": false
+    }
+  }
+}

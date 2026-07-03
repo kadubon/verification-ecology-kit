@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/aperture.schema.json",
+  "type": "object",
+  "properties": {
+    "question_form_capacity": { "$ref": "#/$defs/capacity" },
+    "residual_type_capacity": { "$ref": "#/$defs/capacity" },
+    "translation_channel_capacity": { "$ref": "#/$defs/capacity" },
+    "counter_packet_capacity": { "$ref": "#/$defs/capacity" },
+    "schema_revision_capacity": { "$ref": "#/$defs/capacity" },
+    "self_verification_capacity": { "$ref": "#/$defs/capacity" }
+  },
+  "required": [
+    "question_form_capacity",
+    "residual_type_capacity",
+    "translation_channel_capacity",
+    "counter_packet_capacity",
+    "schema_revision_capacity",
+    "self_verification_capacity"
+  ],
+  "$defs": {
+    "capacity": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "nominal_capacity": { "type": "integer" },
+        "feasible_capacity": { "type": "integer" },
+        "exercised_capacity": { "type": "integer" },
+        "residual_obligations": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["nominal_capacity", "feasible_capacity", "exercised_capacity"],
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,9 @@
+{
+  "case_id": "schema-overclosure-residual",
+  "kind": "packet-operation",
+  "expected_check": "SchemaOverclosureRisk",
+  "expected_result": "residualize",
+  "extension": {
+    "schema_overclosure_exposure": "unresolved"
+  }
+}

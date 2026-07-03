@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/vet-object-ref.schema.json",
+  "type": "object",
+  "properties": {
+    "bundle_id": { "type": "string" },
+    "object_id": { "type": "string" },
+    "schema_id": { "type": "string" },
+    "pointer": { "type": "string" },
+    "digest_algorithm_id": { "type": "string" },
+    "digest": { "$ref": "#/$defs/digest" },
+    "intended_use": { "type": "string" }
+  },
+  "required": [
+    "bundle_id",
+    "object_id",
+    "schema_id",
+    "pointer",
+    "digest_algorithm_id",
+    "digest",
+    "intended_use"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "digest": {
+      "type": "object",
+      "properties": {
+        "algorithm_id": { "type": "string" },
+        "value": { "type": "string" }
+      },
+      "required": ["algorithm_id", "value"],
+      "additionalProperties": false
+    }
+  }
+}

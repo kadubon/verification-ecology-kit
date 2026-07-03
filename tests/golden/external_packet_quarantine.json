@@ -1,0 +1,6 @@
+{
+  "case_id": "external-packet-quarantine",
+  "kind": "external-packet",
+  "expected_visibility": "quarantined",
+  "expected_trust_status": "external_candidate"
+}

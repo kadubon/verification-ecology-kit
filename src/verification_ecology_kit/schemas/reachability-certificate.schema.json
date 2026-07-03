@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/reachability-certificate.schema.json",
+  "type": "object",
+  "properties": {
+    "certificate_id": { "type": "string" },
+    "object_id": { "type": "string" },
+    "schema_version": { "type": "string" },
+    "canonical_digest": { "type": "object" },
+    "status": { "type": "string", "enum": ["active", "stale", "revoked", "migrated", "unknown"] },
+    "predicate": { "type": "string", "enum": ["destructive", "narrowing"] },
+    "certificate_contract": { "type": "string" },
+    "carrier_id": { "type": "string" },
+    "checker_id": { "type": "string" },
+    "claim_kind": { "type": "string", "enum": ["exposure", "exclusion", "bounded_exposure", "unknown"] },
+    "cover_check_result": { "type": "string" },
+    "empty_check_result": { "type": "string" },
+    "soundgap_residuals": { "type": "array" },
+    "residual_obligations": { "type": "array", "items": { "type": "string" } },
+    "provenance": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "certificate_id",
+    "object_id",
+    "schema_version",
+    "canonical_digest",
+    "status",
+    "predicate",
+    "certificate_contract",
+    "carrier_id",
+    "checker_id",
+    "claim_kind",
+    "cover_check_result",
+    "empty_check_result",
+    "soundgap_residuals",
+    "residual_obligations",
+    "provenance"
+  ],
+  "additionalProperties": true
+}

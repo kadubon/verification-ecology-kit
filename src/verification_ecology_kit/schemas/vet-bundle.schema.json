@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/vet-bundle.schema.json",
+  "type": "object",
+  "properties": {
+    "bundle_id": { "type": "string" },
+    "schema_version": { "type": "string" },
+    "conformance_profile": { "type": "string", "enum": ["core", "operational", "federated"] },
+    "objects": { "type": "array", "items": { "$ref": "vet-object-envelope.schema.json" } },
+    "references": { "type": "array", "items": { "$ref": "vet-object-ref.schema.json" } },
+    "schema_catalogue": { "type": "object" },
+    "residual_ledger": { "$ref": "residual-ledger.schema.json" },
+    "authority_decisions": { "type": "array" },
+    "judgment_records": { "type": "array" },
+    "provenance": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "bundle_id",
+    "schema_version",
+    "conformance_profile",
+    "objects",
+    "references",
+    "schema_catalogue",
+    "residual_ledger",
+    "authority_decisions",
+    "judgment_records",
+    "provenance"
+  ],
+  "additionalProperties": false
+}

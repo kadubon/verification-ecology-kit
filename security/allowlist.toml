@@ -1,0 +1,5 @@
+# Public empty allowlist used by CI and examples.
+# Do not add private paths, emails, tokens, or local machine identifiers here.
+local_info = []
+emails = []
+paths = []

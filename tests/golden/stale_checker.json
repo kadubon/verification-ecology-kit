@@ -1,0 +1,7 @@
+{
+  "case_id": "stale-checker",
+  "kind": "checker-registry",
+  "expected_result": "residualize",
+  "checker_id": "checker-stale",
+  "status": "stale"
+}

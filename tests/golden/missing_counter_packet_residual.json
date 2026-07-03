@@ -1,0 +1,7 @@
+{
+  "case_id": "missing-counter-packet",
+  "kind": "packet-validation",
+  "expected_check": "CounterPacketAdequacy",
+  "expected_result": "residualize",
+  "expected_failure": "missing_counter_packet"
+}

@@ -1,0 +1,11 @@
+{
+  "case_id": "minimal-core-bundle",
+  "kind": "conformance",
+  "expected_decision": "accept",
+  "bundle": {
+    "bundle_id": "golden-minimal",
+    "schema_version": "1",
+    "conformance_profile": "core",
+    "objects": []
+  }
+}

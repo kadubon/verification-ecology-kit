@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/residual-ledger.schema.json",
+  "type": "object",
+  "properties": {
+    "residuals": { "type": "array", "items": { "$ref": "residual-record.schema.json" } },
+    "events": { "type": "array", "items": { "type": "object" } },
+    "policy_id": { "type": "string" }
+  },
+  "required": ["residuals", "events", "policy_id"],
+  "additionalProperties": false
+}

@@ -1,0 +1,6 @@
+{
+  "bundle_id": "fixture-minimal",
+  "schema_version": "1",
+  "conformance_profile": "core",
+  "objects": []
+}

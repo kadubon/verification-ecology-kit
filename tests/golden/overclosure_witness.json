@@ -1,0 +1,9 @@
+{
+  "case_id": "overclosure-witness",
+  "kind": "overclosure",
+  "expected_overclosing": true,
+  "gain_record": ["accuracy_gain"],
+  "scope_and_measurement_context": ["benchmark"],
+  "regression_records": ["lost_counterexample_channel"],
+  "residual_adequacy_record": []
+}

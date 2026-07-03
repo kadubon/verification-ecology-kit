@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/authority-decision.schema.json",
+  "type": "object",
+  "properties": {
+    "authority_decision_id": { "type": "string" },
+    "object_id": { "type": "string" },
+    "schema_version": { "type": "string" },
+    "canonical_digest": { "type": "object" },
+    "lifecycle_status": { "type": "string", "enum": ["active", "stale", "revoked", "migrated", "unknown"] },
+    "policy_id": { "type": "string" },
+    "action": { "type": "string" },
+    "decision": { "type": "string", "enum": ["allow", "deny", "quarantine", "residualize"] },
+    "deny_by_default": { "const": true },
+    "linked_certification_records": { "type": "array", "items": { "type": "string" } },
+    "required_support_refs": { "type": "array", "items": { "type": "string" } },
+    "residual_gates": { "type": "array", "items": { "type": "string" } },
+    "ledger_event_refs": { "type": "array", "items": { "type": "string" } },
+    "provenance": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "authority_decision_id",
+    "object_id",
+    "schema_version",
+    "canonical_digest",
+    "lifecycle_status",
+    "policy_id",
+    "action",
+    "decision",
+    "deny_by_default",
+    "linked_certification_records",
+    "required_support_refs",
+    "residual_gates",
+    "ledger_event_refs",
+    "provenance"
+  ],
+  "additionalProperties": true
+}

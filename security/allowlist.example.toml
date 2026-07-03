@@ -1,0 +1,4 @@
+# Copy to allowlist.toml for local use. Do not commit private values.
+local_info = []
+emails = []
+paths = []

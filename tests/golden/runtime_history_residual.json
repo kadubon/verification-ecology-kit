@@ -1,0 +1,6 @@
+{
+  "case_id": "runtime-history-residual",
+  "kind": "runtime",
+  "history_event_type": "failure",
+  "expected_residual_count_after_two_runs": 1
+}

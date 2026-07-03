@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/residual-record.schema.json",
+  "type": "object",
+  "properties": {
+    "residual_id": { "type": "string" },
+    "kind": { "type": "string" },
+    "origin": { "type": "string" },
+    "scope": { "type": "array", "items": { "type": "string" } },
+    "obligation": { "type": "string" },
+    "payload": { "type": "object" },
+    "exposure": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["active", "quarantined", "merged", "retired", "redacted"]
+    },
+    "route": { "type": ["object", "null"] },
+    "update_links": { "type": "array", "items": { "type": "string" } },
+    "provenance": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "residual_id",
+    "kind",
+    "origin",
+    "scope",
+    "obligation",
+    "payload",
+    "exposure",
+    "status",
+    "route",
+    "update_links",
+    "provenance"
+  ],
+  "additionalProperties": true
+}

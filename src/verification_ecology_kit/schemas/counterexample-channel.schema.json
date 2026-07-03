@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/counterexample-channel.schema.json",
+  "type": "object",
+  "properties": {
+    "channel_id": { "type": "string" },
+    "target_ref": { "type": "string" },
+    "status": { "type": "string", "enum": ["active", "stale", "revoked", "migrated", "unknown"] },
+    "last_checked": { "type": "string" },
+    "search_window": { "type": "string" },
+    "budget": { "type": "array", "items": { "type": "string" } },
+    "freshness_interval": { "type": "string" },
+    "unresolved_reports": { "type": "array", "items": { "type": "string" } },
+    "stale_condition": { "type": "string" },
+    "adversarial_ingress": { "type": "array", "items": { "type": "string" } },
+    "cex_closed_result": { "type": "string" },
+    "residual_obligations": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "channel_id",
+    "target_ref",
+    "status",
+    "last_checked",
+    "search_window",
+    "budget",
+    "freshness_interval",
+    "unresolved_reports",
+    "stale_condition",
+    "adversarial_ingress",
+    "cex_closed_result",
+    "residual_obligations"
+  ],
+  "additionalProperties": false
+}

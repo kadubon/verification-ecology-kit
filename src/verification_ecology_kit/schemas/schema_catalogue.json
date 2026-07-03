@@ -1,0 +1,36 @@
+{
+  "catalogue_id": "verification-ecology-kit-core-1",
+  "serialization_profile": {
+    "serialization_profile_id": "vet-json-profile-1",
+    "json_dialect": "RFC8259_JSON",
+    "ijson_required_for_digest": true,
+    "schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+    "canonicalization": "RFC8785_JCS_compatible",
+    "pointer_language": "RFC6901_JSON_Pointer",
+    "duplicate_member_policy": "fail",
+    "invalid_unicode_policy": "fail",
+    "non_interoperable_number_policy": "residualize_or_fail"
+  },
+  "schemas": [
+    "vet-object-ref.schema.json",
+    "vet-object-envelope.schema.json",
+    "check-result.schema.json",
+    "conformance-report.schema.json",
+    "verifier-packet.schema.json",
+    "residual-record.schema.json",
+    "residual-ledger.schema.json",
+    "judgment-record.schema.json",
+    "authority-decision.schema.json",
+    "boundary-record.schema.json",
+    "counterexample-channel.schema.json",
+    "digest-record.schema.json",
+    "reference-edge.schema.json",
+    "reachability-certificate.schema.json",
+    "schema-migration-witness.schema.json",
+    "status-event.schema.json",
+    "certification-record.schema.json",
+    "aperture.schema.json",
+    "maturity-profile.schema.json",
+    "vet-bundle.schema.json"
+  ]
+}

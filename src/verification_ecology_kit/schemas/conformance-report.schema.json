@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/conformance-report.schema.json",
+  "type": "object",
+  "properties": {
+    "profile": { "type": "string", "enum": ["core", "operational", "federated"] },
+    "decision": {
+      "type": "string",
+      "enum": ["accept", "accept_with_residuals", "quarantine", "reject"]
+    },
+    "ordered_check_results": {
+      "type": "array",
+      "items": { "$ref": "check-result.schema.json" }
+    },
+    "support_blocking_failures": { "type": "array", "items": { "type": "string" } },
+    "residualized_failures": { "type": "array", "items": { "type": "string" } },
+    "quarantine_triggers": { "type": "array", "items": { "type": "string" } },
+    "evidence_refs": { "type": "array", "items": { "type": "string" } },
+    "suggested_repair_hooks": { "type": "array", "items": { "type": "string" } },
+    "provenance": { "type": "array", "items": { "type": "string" } },
+    "checked_input_digest": { "type": ["string", "null"] },
+    "report_digest": { "type": ["string", "null"] }
+  },
+  "required": [
+    "profile",
+    "decision",
+    "ordered_check_results",
+    "support_blocking_failures",
+    "residualized_failures",
+    "quarantine_triggers",
+    "evidence_refs",
+    "suggested_repair_hooks",
+    "provenance",
+    "checked_input_digest",
+    "report_digest"
+  ],
+  "additionalProperties": false
+}

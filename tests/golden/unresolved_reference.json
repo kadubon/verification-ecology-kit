@@ -1,0 +1,9 @@
+{
+  "case_id": "unresolved-reference",
+  "kind": "reference",
+  "expected_result": "fail",
+  "expected_failure": "unresolved_reference",
+  "bundle_id": "golden-ref",
+  "object_id": "present-object",
+  "missing_object_id": "missing-object"
+}

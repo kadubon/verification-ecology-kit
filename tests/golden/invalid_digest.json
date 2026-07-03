@@ -1,0 +1,24 @@
+{
+  "case_id": "invalid-digest",
+  "kind": "conformance",
+  "expected_decision": "reject",
+  "bundle": {
+    "bundle_id": "golden-invalid-digest",
+    "schema_version": "1",
+    "conformance_profile": "core",
+    "objects": [
+      {
+        "object_id": "bad-object",
+        "schema_id": "example-object",
+        "schema_version": "1.0",
+        "canonical_digest": {
+          "algorithm_id": "sha256",
+          "value": "bad"
+        },
+        "payload": {
+          "value": "x"
+        }
+      }
+    ]
+  }
+}

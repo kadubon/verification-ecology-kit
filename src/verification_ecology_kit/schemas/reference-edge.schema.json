@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/reference-edge.schema.json",
+  "type": "object",
+  "properties": {
+    "reference_id": { "type": "string" },
+    "from_object_ref": { "$ref": "vet-object-ref.schema.json" },
+    "pointer": { "type": "string" },
+    "target_schema": { "type": "string" },
+    "target_id": { "type": "string" },
+    "target_digest": { "type": ["object", "null"] },
+    "intended_use": { "type": "string" },
+    "residual_refs": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "reference_id",
+    "from_object_ref",
+    "pointer",
+    "target_schema",
+    "target_id",
+    "target_digest",
+    "intended_use",
+    "residual_refs"
+  ],
+  "additionalProperties": false
+}

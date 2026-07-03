@@ -1,0 +1,7 @@
+{
+  "case_id": "authority-denial-due-to-stale-support",
+  "kind": "authority",
+  "expected_decision": "deny",
+  "expected_result": "fail",
+  "stale_or_unknown_support_refs": ["support-stale"]
+}

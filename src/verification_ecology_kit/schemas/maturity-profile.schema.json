@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/maturity-profile.schema.json",
+  "type": "object",
+  "properties": {
+    "lineage_coverage": { "type": "array", "items": { "type": "string" } },
+    "residual_liveness": { "type": "array", "items": { "type": "string" } },
+    "boundary_control": { "type": "array", "items": { "type": "string" } },
+    "aperture_accounting": { "type": "array", "items": { "type": "string" } },
+    "federation_readiness": { "type": "array", "items": { "type": "string" } },
+    "schema_revision_capacity": { "type": "array", "items": { "type": "string" } },
+    "evidence_refs": { "type": "array", "items": { "type": "string" } },
+    "unresolved_residual_count": { "type": "integer" },
+    "stale_certificate_count": { "type": "integer" },
+    "unknown_certificate_count": { "type": "integer" },
+    "checker_status_residual_count": { "type": "integer" },
+    "open_counterexample_channels": { "type": "array", "items": { "type": "string" } },
+    "scalar_dashboard_label": { "type": "string" },
+    "evidence_not_replaced_by_label": { "const": true }
+  },
+  "required": [
+    "lineage_coverage",
+    "residual_liveness",
+    "boundary_control",
+    "aperture_accounting",
+    "federation_readiness",
+    "schema_revision_capacity",
+    "evidence_refs",
+    "unresolved_residual_count",
+    "stale_certificate_count",
+    "unknown_certificate_count",
+    "checker_status_residual_count",
+    "open_counterexample_channels",
+    "scalar_dashboard_label",
+    "evidence_not_replaced_by_label"
+  ],
+  "additionalProperties": false
+}

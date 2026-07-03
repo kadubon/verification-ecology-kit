@@ -1,0 +1,164 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "verification-ecology-kit"
+version = "0.1.0"
+description = "Python toolkit for verification auditing, residual ledgers, conformance checks, and verifier packet workflows."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{ name = "K. Takahashi" }]
+keywords = [
+  "verification",
+  "audit",
+  "json-schema",
+  "conformance",
+  "software-quality",
+  "testing",
+  "residual-accountability",
+  "self-verification",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security",
+  "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = [
+  "jsonschema>=4.22",
+]
+
+[project.optional-dependencies]
+dev = [
+  "bandit>=1.7.9",
+  "build>=1.2.1",
+  "check-jsonschema>=0.29.0",
+  "detect-secrets>=1.5.0",
+  "hypothesis>=6.100",
+  "mkdocs>=1.6.0",
+  "mypy>=1.10",
+  "pip-audit>=2.7.3",
+  "pytest>=8.2",
+  "pytest-cov>=5.0",
+  "ruff>=0.5.0",
+]
+
+[project.urls]
+Homepage = "https://doi.org/10.5281/zenodo.21147093"
+Repository = "https://github.com/kadubon/verification-ecology-kit"
+Issues = "https://github.com/kadubon/verification-ecology-kit/issues"
+Documentation = "https://github.com/kadubon/verification-ecology-kit#readme"
+Changelog = "https://github.com/kadubon/verification-ecology-kit/blob/main/CHANGELOG.md"
+Security = "https://github.com/kadubon/verification-ecology-kit/blob/main/SECURITY.md"
+
+[project.scripts]
+vek = "verification_ecology_kit.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/verification_ecology_kit"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/tests",
+  "/examples",
+  "/docs",
+  "/scripts",
+  "/security/allowlist.toml",
+  "/security/allowlist.example.toml",
+  "/README.md",
+  "/LICENSE",
+  "/CHANGELOG.md",
+  "/CONTRIBUTING.md",
+  "/CODE_OF_CONDUCT.md",
+  "/SECURITY.md",
+  "/pyproject.toml",
+]
+exclude = [
+  "*.aux",
+  "*.bbl",
+  "*.bcf",
+  "*.blg",
+  "*.fdb_latexmk",
+  "*.fls",
+  "*.log",
+  "*.out",
+  "*.run.xml",
+  "*.synctex.gz",
+  "*.toc",
+  ".env",
+  ".env.*",
+  ".pytest_cache",
+  ".ruff_cache",
+  ".mypy_cache",
+  ".hypothesis",
+  ".venv",
+  "dist",
+  "build",
+  "**/.ipynb_checkpoints/**",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests", "scripts", "examples"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM", "RUF", "S", "T20"]
+ignore = [
+  "S101",
+  "S603",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
+"examples/**/*.py" = ["T20"]
+"scripts/**/*.py" = ["T20"]
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "src"
+strict = true
+warn_unused_ignores = true
+warn_return_any = false
+no_implicit_reexport = true
+exclude = ["build", "dist"]
+
+[[tool.mypy.overrides]]
+module = ["jsonschema", "jsonschema.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --cov=verification_ecology_kit --cov-report=term-missing --cov-fail-under=90"
+testpaths = ["tests"]
+markers = [
+  "property: property-based tests",
+  "security: security scanner tests",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["verification_ecology_kit"]
+omit = [
+  "src/verification_ecology_kit/schemas/*",
+  "src/verification_ecology_kit/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "if TYPE_CHECKING:",
+  "if __name__ == .__main__.:",
+  "pragma: no cover",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "dist", "build"]
+skips = ["B101"]

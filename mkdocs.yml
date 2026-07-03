@@ -1,0 +1,17 @@
+site_name: verification-ecology-kit
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Concepts: concepts.md
+  - Theory Mapping: theory_mapping.md
+  - Data Model: data_model.md
+  - Schemas: schemas.md
+  - Conformance: conformance.md
+  - Audits: audits.md
+  - CLI: cli.md
+  - Examples: examples.md
+  - Security: security.md
+  - Pre-Publication Audit: pre_publication_audit.md
+  - Publishing: pyproject-publishing.md
+  - API: api.md
+  - Glossary: glossary.md
