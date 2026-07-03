@@ -64,7 +64,7 @@ jobs:
         with:
           enable-cache: false
       - run: uv sync --all-extras --dev
-      - run: uv run pytest tests/property
+      - run: uv run pytest tests/property --no-cov
 
   schema-check:
     runs-on: ubuntu-latest
