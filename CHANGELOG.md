@@ -3,6 +3,11 @@
 ## 1.1.0
 
 - Added executable semantic readiness gates for operational empty bundles, strict JSON Pointer indices, authority denial paths, packet operation admissibility, runtime reporting, and scanner redaction.
+- Added reconstructed `JValid` checks, support-aware authority resolution, and support reference blocking for stale, migrated, redacted, or residual-gated evidence.
+- Added replayable residual ledger event payloads, residual metabolism route classes, and tamper detection for ledger event digests.
+- Added structured runtime stages, schema-overclosure checks, reachability-certificate calls, aperture/frontier comparisons, and packet ecological invariant checks.
+- Moved runtime JSON loading to stable model serde helpers and added atomic save with symlink guards.
+- Clarified README and v1 audit documentation around the semantic completeness boundary.
 - Expanded verifier packet schemas and loaders for lineage, anti-overclosure, ecological invariants, residual liveness, circulation residuals, and inherited boundary metadata.
 - Hardened conformance, authority, packet operation, runtime, residual ledger, and reference resolution behavior against silent support loss.
 - Added TOML allowlist support and broader token detection for local secret scanning.

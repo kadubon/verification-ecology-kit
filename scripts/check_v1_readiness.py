@@ -165,6 +165,7 @@ def _collect_gates(
     readme = _read_text("README.md")
     mkdocs = _read_text("mkdocs.yml")
     theory_mapping = _read_text("docs/theory_mapping.md")
+    v1_audit = _read_text("docs/v1_audit.md")
     readiness = _read_text("docs/v1_readiness.md")
     release_gates = _read_text("docs/release_gates.md")
     changelog = _read_text("CHANGELOG.md")
@@ -184,6 +185,7 @@ def _collect_gates(
         _gate_release_gates_include_strict_check(release_gates),
         _gate_workflows_use_locked_sync(),
         _gate_semantic_regression_checks(),
+        _gate_v1_audit_semantic_statuses(v1_audit),
         _gate_schema_semantic_coverage(),
         _gate_no_placeholder_terms(),
         _gate_changelog_v1(changelog),
@@ -382,8 +384,14 @@ def _gate_semantic_regression_checks() -> Gate:
         from verification_ecology_kit.audit.security import scan_secrets
         from verification_ecology_kit.digest import Digest
         from verification_ecology_kit.errors import VEKError
+        from verification_ecology_kit.model.aperture import Aperture, CapacityRecord
         from verification_ecology_kit.model.authority import AuthorityDecision, AuthorityEngine
         from verification_ecology_kit.model.conformance import ConformanceEngine, VetBundle
+        from verification_ecology_kit.model.frontier import (
+            FrontierComparison,
+            FrontierEntry,
+            VerifiableFrontierProfile,
+        )
         from verification_ecology_kit.model.packets import VerifierPacket
         from verification_ecology_kit.model.records import (
             AuthorityAction,
@@ -394,7 +402,11 @@ def _gate_semantic_regression_checks() -> Gate:
         )
         from verification_ecology_kit.model.residuals import ResidualRecord
         from verification_ecology_kit.operations.base import PacketOperationEngine
-        from verification_ecology_kit.references import SchemaCatalogue, resolve_pointer
+        from verification_ecology_kit.references import (
+            ObjectEnvelope,
+            SchemaCatalogue,
+            resolve_pointer,
+        )
         from verification_ecology_kit.result import CheckOutcome
         from verification_ecology_kit.runtime.engine import RuntimeEngine
         from verification_ecology_kit.runtime.in_memory import InMemoryStore
@@ -438,6 +450,76 @@ def _gate_semantic_regression_checks() -> Gate:
     if decision != AuthorityDecisionValue.DENY or authority_result.passed:
         failures.append("stale authority support was allowed")
 
+    subject = ObjectEnvelope("subject", "schema", "1.0", {"status": "active"})
+    subject.refresh_digest()
+    subject_ref = subject.ref(bundle_id="b")
+    bad_record = {
+        "judgment_id": "j",
+        "judgment_kind": "support",
+        "subject": subject_ref.to_dict(),
+        "checker_or_policy_ref": "checker",
+        "contract_version": "bad-contract",
+        "schema_version": "1",
+        "object_id": "subject",
+        "canonical_digest": subject.canonical_digest.to_dict(),
+        "use_context_ref": "u",
+        "use_context": {
+            "subject_ref": subject_ref.to_dict(),
+            "resolved_input_ref": subject_ref.to_dict(),
+            "canonical_input_ref": subject_ref.to_dict(),
+            "input_digest": subject.canonical_digest.to_dict(),
+        },
+        "contract": {
+            "judgment_kind": "support",
+            "subject_type": "schema",
+            "allowed_results": ["pass"],
+            "version": "actual-contract",
+        },
+        "canonical_input_ref": subject_ref.to_dict(),
+        "input_digest": subject.canonical_digest.to_dict(),
+        "result": "pass",
+        "jvalid_result": "pass",
+        "status": "active",
+    }
+    bad_jvalid_bundle = VetBundle(
+        "b",
+        "1",
+        ConformanceProfile.OPERATIONAL,
+        SchemaCatalogue("cat", {"schema": ("1.0",)}),
+        [subject],
+        judgment_records=[bad_record],
+    )
+    if ConformanceEngine().run(bad_jvalid_bundle).decision.value != "reject":
+        failures.append("declared JValid pass bypassed reconstruction")
+
+    stale_support = ObjectEnvelope("support", "schema", "1.0", {"status": "stale"})
+    stale_support.refresh_digest()
+    stale_bundle = VetBundle(
+        "b",
+        "1",
+        ConformanceProfile.OPERATIONAL,
+        SchemaCatalogue("cat", {"schema": ("1.0",)}),
+        [subject, stale_support],
+        authority_decisions=[
+            {
+                "authority_decision_id": "declared-allow",
+                "decision": "allow",
+                "lifecycle_status": "active",
+                "auth_inputs": {
+                    "auth_inputs_ref": "ai",
+                    "object_id": "subject",
+                    "schema_version": "1",
+                    "canonical_digest": subject.canonical_digest.to_dict(),
+                    "candidate_ref": "subject",
+                    "action": "local_use",
+                    "support_refs": ["support"],
+                },
+            }
+        ],
+    )
+    if ConformanceEngine().run(stale_bundle).decision.value != "reject":
+        failures.append("conformance authority allowed stale support evidence")
+
     engine = PacketOperationEngine()
     left = VerifierPacket.minimal()
     right = VerifierPacket.minimal()
@@ -447,6 +529,17 @@ def _gate_semantic_regression_checks() -> Gate:
     operation = engine.compose(left, right)
     if operation.admissibility.result == CheckOutcome.PASS:
         failures.append("composition admissibility passed without boundary/counter checks")
+    parent = VerifierPacket.minimal()
+    parent.counter_packet_refs.append("counter-parent")
+    child = VerifierPacket.minimal()
+    child.packet_id = "child"
+    invariant_result = engine._check_ecological_invariants((parent,), child, boundary_checked=True)
+    if invariant_result.passed:
+        failures.append("packet operation accepted dropped ecological invariant")
+    external = VerifierPacket.from_external_candidate()
+    internalized = engine.internalize(external, translated=False, boundary_checked=False)
+    if internalized.admissibility.result == CheckOutcome.PASS:
+        failures.append("external packet internalized without translation/counter/residual")
 
     store = InMemoryStore()
     state = store.load()
@@ -457,6 +550,44 @@ def _gate_semantic_regression_checks() -> Gate:
     for key in ("frontier_updates", "aperture_updates", "schema_checks", "lineage_checks"):
         if not runtime_report.get(key):
             failures.append(f"runtime report lacks {key}")
+        if any(not isinstance(item, dict) for item in runtime_report.get(key, [])):
+            failures.append(f"runtime report {key} contains non-structured labels")
+    if any(not isinstance(item, dict) for item in runtime_report.get("reachability_checks", [])):
+        failures.append("runtime reachability check is not structured")
+
+    ledger = state.residual_ledger
+    if ledger.events:
+        ledger.events[0] = ledger.events[0].__class__(
+            **{**ledger.events[0].to_dict(), "post_state_digest": "tampered"}
+        )
+        if ledger.trace_ok().passed:
+            failures.append("ledger trace accepted tampered event digest")
+
+    before_frontier = VerifiableFrontierProfile(
+        [FrontierEntry("u", "transform", ("p1",), ("r1",), ("1h",))]
+    )
+    after_frontier = VerifiableFrontierProfile(
+        [FrontierEntry("u", "transform", ("p1", "p2"), ("r1",), ("1h",))]
+    )
+    if (
+        before_frontier.compare(after_frontier, before_packet_count=1, after_packet_count=2)
+        != FrontierComparison.PACKET_SPAM
+    ):
+        failures.append("frontier packet multiplication was not detected as packet spam")
+    before_aperture = Aperture(
+        question_form_capacity=CapacityRecord("question", feasible_capacity=2)
+    )
+    after_aperture = Aperture(
+        question_form_capacity=CapacityRecord("question", feasible_capacity=1)
+    )
+    if before_aperture.compare(after_aperture).value != "narrowed_without_residual":
+        failures.append("silent aperture narrowing was not detected")
+
+    json_store_source = _read_text("src/verification_ecology_kit/runtime/json_store.py")
+    if "verification_ecology_kit.cli" in json_store_source:
+        failures.append("JsonStore imports private CLI loaders")
+    if "NamedTemporaryFile" not in json_store_source or "os.replace" not in json_store_source:
+        failures.append("JsonStore save is not visibly atomic")
 
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
@@ -478,6 +609,38 @@ def _gate_semantic_regression_checks() -> Gate:
         not failures,
         "semantic negative checks pass" if not failures else "; ".join(failures),
     )
+
+
+def _gate_v1_audit_semantic_statuses(v1_audit: str) -> Gate:
+    semantic_rows = (
+        "JValid",
+        "Authority aggregation",
+        "ResidualLedger",
+        "TraceOK",
+        "RuntimeEngine",
+        "LocalInternalization pipeline",
+    )
+    bad: list[str] = []
+    for row_name in semantic_rows:
+        pattern = re.compile(rf"^\| {re.escape(row_name)} \|.*\| implemented \|$", re.M)
+        if pattern.search(v1_audit):
+            bad.append(row_name)
+    allowed_statuses = (
+        "implemented",
+        "schema-backed",
+        "operational-check",
+        "partial-semantic",
+        "documented-interface",
+        "residualized",
+    )
+    missing_status_note = "Status values:" not in v1_audit or not all(
+        status in v1_audit for status in allowed_statuses
+    )
+    passed = not bad and not missing_status_note
+    detail = "semantic audit rows use precise status vocabulary"
+    if not passed:
+        detail = f"overstated={bad}; missing_status_note={missing_status_note}"
+    return Gate("v1_audit_semantic_statuses", passed, detail)
 
 
 def _gate_schema_semantic_coverage() -> Gate:

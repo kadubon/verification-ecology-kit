@@ -7,7 +7,12 @@ from datetime import UTC, datetime
 from typing import Any
 
 from verification_ecology_kit.ids import new_id
-from verification_ecology_kit.model.records import LedgerStatus, ResidualKind, jsonable
+from verification_ecology_kit.model.records import (
+    LedgerStatus,
+    ResidualKind,
+    ResidualMetabolismRoute,
+    jsonable,
+)
 from verification_ecology_kit.result import CheckResult, FailureCode, pass_result, residual_result
 
 
@@ -17,11 +22,20 @@ class ResidualRoute:
     deadline: str
     resource_quota: tuple[str, ...]
     recheck_trigger: str
+    route_type: ResidualMetabolismRoute = ResidualMetabolismRoute.EXPLICIT_PRESERVED_UNKNOWN
     authority_effect: str = "informational"
     active_follow_through: bool = True
 
     def is_live(self, *, now: datetime | None = None) -> bool:
+        if not isinstance(self.route_type, ResidualMetabolismRoute):
+            return False
+        if not self.owner.strip():
+            return False
         if not self.active_follow_through:
+            return False
+        if not self.resource_quota:
+            return False
+        if not self.recheck_trigger.strip():
             return False
         if not self.deadline:
             return False

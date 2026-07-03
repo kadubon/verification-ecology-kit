@@ -27,6 +27,7 @@ class LedgerEvent:
     conflict_policy: str = "preserve_or_residualize"
     predecessor_event_id: str | None = None
     provenance: tuple[str, ...] = ()
+    event_payload: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return jsonable(self)
@@ -89,6 +90,7 @@ class ResidualLedger:
             pre_state_digest=pre,
             actor_authority_ref=actor_authority_ref,
             provenance=provenance,
+            event_payload={"post_residuals": self._snapshot()},
         )
 
     def merge(
@@ -118,6 +120,10 @@ class ResidualLedger:
             justification=justification,
             pre_state_digest=pre,
             actor_authority_ref=actor_authority_ref,
+            event_payload={
+                "missing_sources": missing,
+                "post_residuals": self._snapshot(),
+            },
         )
 
     def retire(
@@ -139,6 +145,10 @@ class ResidualLedger:
             justification=justification,
             pre_state_digest=pre,
             actor_authority_ref=actor_authority_ref,
+            event_payload={
+                "reinspection_condition": reinspection_condition,
+                "post_residuals": self._snapshot(),
+            },
         )
 
     def quarantine(
@@ -159,6 +169,7 @@ class ResidualLedger:
             justification=reason,
             pre_state_digest=pre,
             actor_authority_ref=actor_authority_ref,
+            event_payload={"recovery_condition": reason, "post_residuals": self._snapshot()},
         )
 
     def redact(
@@ -189,36 +200,47 @@ class ResidualLedger:
             justification=reason,
             pre_state_digest=pre,
             actor_authority_ref=actor_authority_ref,
+            event_payload={"post_residuals": self._snapshot()},
         )
         return redaction, event
 
     def trace_ok(self) -> CheckResult:
-        previous_digest = ""
-        for index, event in enumerate(self.events):
-            if event.post_state_digest == event.pre_state_digest:
+        replay_state: dict[str, dict[str, Any]] = {}
+        previous_event_id: str | None = None
+        for event in self.events:
+            expected_pre = self._state_digest_for(replay_state)
+            if event.pre_state_digest != expected_pre:
                 return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
-            if index > 0 and event.predecessor_event_id != self.events[index - 1].event_id:
+            if event.predecessor_event_id != previous_event_id:
                 return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
-            missing_sources = [
-                residual_id
-                for residual_id in event.source_residuals
-                if residual_id not in self.residuals
-            ]
-            missing_targets = [
-                residual_id
-                for residual_id in event.target_residuals
-                if residual_id not in self.residuals
-            ]
-            if missing_sources or missing_targets:
+            post_residuals = event.event_payload.get("post_residuals")
+            if not isinstance(post_residuals, dict):
                 return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
-            if index == 0:
-                if event.pre_state_digest and event.predecessor_event_id is not None:
+            for residual_id in event.source_residuals:
+                if residual_id not in replay_state:
+                    target = self._event_target_snapshot(event, post_residuals)
+                    if target.get("kind") != ResidualKind.CONFLICT_RESIDUAL.value:
+                        return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
+            for residual_id in event.target_residuals:
+                if residual_id not in post_residuals:
                     return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
-                previous_digest = event.post_state_digest
-                continue
-            if event.pre_state_digest != previous_digest:
+            if event.kind == "redact" and not any(
+                post_residuals[target].get("kind") == ResidualKind.REDACTION_RESIDUAL.value
+                for target in event.target_residuals
+                if target in post_residuals
+            ):
                 return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
-            previous_digest = event.post_state_digest
+            if event.kind == "retire" and not event.event_payload.get("reinspection_condition"):
+                return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
+            expected_post = self._state_digest_for(post_residuals)
+            if event.post_state_digest != expected_post:
+                return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
+            replay_state = {
+                str(key): value for key, value in post_residuals.items() if isinstance(value, dict)
+            }
+            previous_event_id = event.event_id
+        if self._state_digest_for(self._snapshot()) != self._state_digest_for(replay_state):
+            return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
         return pass_result("TraceOK")
 
     def to_dict(self) -> dict[str, Any]:
@@ -238,6 +260,7 @@ class ResidualLedger:
         pre_state_digest: str,
         actor_authority_ref: str,
         provenance: tuple[str, ...] = (),
+        event_payload: dict[str, Any] | None = None,
     ) -> LedgerEvent:
         predecessor = self.events[-1].event_id if self.events else None
         post = self.state_digest()
@@ -252,6 +275,25 @@ class ResidualLedger:
             policy_id=self.policy_id,
             predecessor_event_id=predecessor,
             provenance=provenance,
+            event_payload=event_payload or {},
         )
         self.events.append(event)
         return event
+
+    def _snapshot(self) -> dict[str, dict[str, Any]]:
+        return {key: self.residuals[key].to_dict() for key in sorted(self.residuals)}
+
+    def _state_digest_for(self, residuals: dict[str, dict[str, Any]]) -> str:
+        state = {
+            "residuals": [residuals[key] for key in sorted(residuals)],
+            "policy_id": self.policy_id,
+        }
+        return DigestPolicy().digest_json(state).value
+
+    def _event_target_snapshot(
+        self, event: LedgerEvent, post_residuals: dict[str, Any]
+    ) -> dict[str, Any]:
+        if not event.target_residuals:
+            return {}
+        target = post_residuals.get(event.target_residuals[0])
+        return target if isinstance(target, dict) else {}

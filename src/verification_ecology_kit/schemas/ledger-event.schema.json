@@ -15,7 +15,20 @@
     "clock_model": { "type": "string", "enum": ["total_order", "partial_order"] },
     "conflict_policy": { "type": "string", "minLength": 1 },
     "predecessor_event_id": { "type": ["string", "null"] },
-    "provenance": { "type": "array", "items": { "type": "string" } }
+    "provenance": { "type": "array", "items": { "type": "string" } },
+    "event_payload": {
+      "type": "object",
+      "properties": {
+        "post_residuals": {
+          "type": "object",
+          "additionalProperties": { "$ref": "residual-record.schema.json" }
+        },
+        "missing_sources": { "type": "array", "items": { "type": "string" } },
+        "reinspection_condition": { "type": "string" },
+        "recovery_condition": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
   },
   "required": [
     "kind",
@@ -30,7 +43,8 @@
     "clock_model",
     "conflict_policy",
     "predecessor_event_id",
-    "provenance"
+    "provenance",
+    "event_payload"
   ],
   "additionalProperties": false
 }

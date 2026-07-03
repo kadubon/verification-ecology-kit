@@ -9,13 +9,14 @@
     "inherited_boundary_refs": { "type": "array", "items": { "type": "string" } },
     "anti_overclosure_gaps": { "type": "array", "items": { "type": "string" } },
     "counter_packet_obligations": { "type": "array", "items": { "type": "string" } },
-    "quarantine_decisions": { "type": "array", "items": { "type": "string" } },
-    "reachability_checks": { "type": "array", "items": { "type": "string" } },
-    "schema_checks": { "type": "array", "items": { "type": "string" } },
-    "lineage_checks": { "type": "array", "items": { "type": "string" } },
-    "repair_or_retire_decisions": { "type": "array", "items": { "type": "string" } },
-    "frontier_updates": { "type": "array", "items": { "type": "string" } },
-    "aperture_updates": { "type": "array", "items": { "type": "string" } },
+    "stages": { "type": "array", "items": { "$ref": "#/$defs/runtime_stage" } },
+    "quarantine_decisions": { "$ref": "#/$defs/check_result_array" },
+    "reachability_checks": { "$ref": "#/$defs/check_result_array" },
+    "schema_checks": { "$ref": "#/$defs/check_result_array" },
+    "lineage_checks": { "$ref": "#/$defs/check_result_array" },
+    "repair_or_retire_decisions": { "$ref": "#/$defs/check_result_array" },
+    "frontier_updates": { "$ref": "#/$defs/check_result_array" },
+    "aperture_updates": { "$ref": "#/$defs/check_result_array" },
     "residuals_routed": { "type": "array", "items": { "type": "string" } },
     "quarantined_packets": { "type": "array", "items": { "type": "string" } },
     "aperture_debts": { "type": "array", "items": { "type": "string" } },
@@ -29,6 +30,7 @@
     "inherited_boundary_refs",
     "anti_overclosure_gaps",
     "counter_packet_obligations",
+    "stages",
     "quarantine_decisions",
     "reachability_checks",
     "schema_checks",
@@ -42,5 +44,22 @@
     "notes",
     "report_digest"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "check_result_array": {
+      "type": "array",
+      "items": { "$ref": "check-result.schema.json" }
+    },
+    "runtime_stage": {
+      "type": "object",
+      "properties": {
+        "stage_name": { "type": "string" },
+        "packet_id": { "type": "string" },
+        "check_result": { "$ref": "check-result.schema.json" },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["stage_name", "packet_id", "check_result", "notes"],
+      "additionalProperties": false
+    }
+  }
 }

@@ -48,6 +48,7 @@ from verification_ecology_kit.model.records import (
     LedgerStatus,
     OriginKind,
     ResidualKind,
+    ResidualMetabolismRoute,
     TrustStatus,
     Visibility,
 )
@@ -723,6 +724,9 @@ def _route_from_json(data: Any) -> ResidualRoute | None:
         deadline=str(data.get("deadline", "")),
         resource_quota=_string_tuple(data.get("resource_quota")),
         recheck_trigger=str(data.get("recheck_trigger", "")),
+        route_type=ResidualMetabolismRoute(
+            str(data.get("route_type", ResidualMetabolismRoute.EXPLICIT_PRESERVED_UNKNOWN))
+        ),
         authority_effect=str(data.get("authority_effect", "informational")),
         active_follow_through=bool(data.get("active_follow_through", True)),
     )
@@ -762,6 +766,7 @@ def _ledger_event_from_json(data: Any) -> LedgerEvent:
         conflict_policy=str(data.get("conflict_policy", "preserve_or_residualize")),
         predecessor_event_id=str(predecessor) if predecessor is not None else None,
         provenance=_string_tuple(data.get("provenance")),
+        event_payload=_dict_value(data.get("event_payload"), name="event_payload"),
     )
 
 

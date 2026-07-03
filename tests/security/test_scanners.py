@@ -35,6 +35,35 @@ def test_secret_scanner_uses_toml_allowlist(tmp_path: Path) -> None:
     assert report.decision == "pass"
 
 
+def test_secret_scanner_redacts_jwt_and_high_entropy_values(tmp_path: Path) -> None:
+    jwt = "eyJ" + "A" * 20 + "." + "B" * 20 + "." + "C" * 20
+    entropy_value = "A9zY8xW7vU6tS5rQ4pO3nM2lK1jI0hGfEdCb"
+    target = tmp_path / "tokens.txt"
+    target.write_text(f"{jwt}\n{entropy_value}\n", encoding="utf-8")
+
+    report = scan_secrets(tmp_path)
+    rendered = report.to_json()
+
+    assert report.decision == "quarantine"
+    assert jwt not in rendered
+    assert entropy_value not in rendered
+
+
+def test_secret_scanner_ignores_lock_hashes_and_test_entropy_fixtures(tmp_path: Path) -> None:
+    entropy_value = "A9zY8xW7vU6tS5rQ4pO3nM2lK1jI0hGfEdCb"
+    (tmp_path / "uv.lock").write_text(
+        f"https://files.pythonhosted.org/packages/aa/bb/{entropy_value}/pkg.whl\n",
+        encoding="utf-8",
+    )
+    test_dir = tmp_path / "tests"
+    test_dir.mkdir()
+    (test_dir / "fixture.py").write_text(f'TOKEN = "{entropy_value}"\n', encoding="utf-8")
+
+    report = scan_secrets(tmp_path)
+
+    assert report.decision == "pass"
+
+
 def test_allowlist_loader_and_scanners_handle_paths_and_regexes(tmp_path: Path) -> None:
     assert load_allowlist(tmp_path / "missing.toml") == {}
 

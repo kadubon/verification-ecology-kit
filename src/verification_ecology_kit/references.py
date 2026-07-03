@@ -7,8 +7,15 @@ from typing import Any
 
 from verification_ecology_kit.digest import Digest, DigestPolicy, object_digest_input
 from verification_ecology_kit.errors import ErrorCode, VEKError
-from verification_ecology_kit.model.records import jsonable
-from verification_ecology_kit.result import CheckResult, FailureCode, fail_result, pass_result
+from verification_ecology_kit.model.lifecycle import StatusEvent, StatusFold, StatusView
+from verification_ecology_kit.model.records import LifecycleStatus, jsonable
+from verification_ecology_kit.result import (
+    CheckResult,
+    FailureCode,
+    fail_result,
+    pass_result,
+    residual_result,
+)
 
 
 @dataclass(frozen=True)
@@ -160,6 +167,22 @@ class SchemaCatalogue:
         return pass_result("SchemaOK")
 
 
+@dataclass(frozen=True)
+class SupportResolution:
+    envelope: ObjectEnvelope | None
+    pointer_target: Any | None
+    reference_edge: ReferenceEdge | None
+    status_view: StatusView | None
+    digest_check: CheckResult
+    migration_check: CheckResult
+    redaction_check: CheckResult
+    residual_gate_check: CheckResult
+    check_result: CheckResult
+
+    def to_dict(self) -> dict[str, object]:
+        return jsonable(self)
+
+
 def resolve_pointer(document: Any, pointer: str) -> Any:
     if pointer == "":
         return document
@@ -237,3 +260,247 @@ class ReferenceResolver:
         except VEKError:
             return envelope, None, fail_result("RefGraphOK", FailureCode.UNRESOLVED_REFERENCE)
         return envelope, target, pass_result("RefGraphOK")
+
+
+class SupportReferenceResolver:
+    def __init__(
+        self,
+        *,
+        bundle_id: str,
+        envelopes: list[ObjectEnvelope],
+        schema_catalogue: SchemaCatalogue,
+    ):
+        self.raw = ReferenceResolver(bundle_id=bundle_id, envelopes=envelopes)
+        self.bundle_id = bundle_id
+        self.schema_catalogue = schema_catalogue
+
+    def resolve_support(
+        self,
+        ref: ObjectRef,
+        *,
+        require_object: bool = False,
+        check_name: str = "SupportRefOK",
+    ) -> SupportResolution:
+        envelope, target, raw_result = self.raw.resolve(ref)
+        edge = (
+            ReferenceEdge(
+                reference_id=f"{ref.bundle_id}:{ref.object_id}:{ref.pointer}",
+                from_object_ref=ref,
+                pointer=ref.pointer,
+                target_schema=ref.schema_id,
+                target_id=ref.object_id,
+                target_digest=ref.digest,
+                intended_use=ref.intended_use,
+            )
+            if envelope is not None
+            else None
+        )
+        if not raw_result.passed or envelope is None:
+            return self._resolution(
+                envelope,
+                target,
+                edge,
+                None,
+                raw_result,
+                pass_result("MigrationOK"),
+                pass_result("RedactionOK"),
+                pass_result("ResidualGateOK"),
+                fail_result(check_name, *raw_result.failure_codes),
+            )
+        if require_object and not isinstance(target, dict):
+            return self._resolution(
+                envelope,
+                target,
+                edge,
+                None,
+                raw_result,
+                pass_result("MigrationOK"),
+                pass_result("RedactionOK"),
+                pass_result("ResidualGateOK"),
+                fail_result(check_name, FailureCode.UNRESOLVED_REFERENCE),
+            )
+        status_view, status_result = self._status_view(envelope)
+        if not status_result.passed:
+            return self._resolution(
+                envelope,
+                target,
+                edge,
+                status_view,
+                raw_result,
+                pass_result("MigrationOK"),
+                pass_result("RedactionOK"),
+                pass_result("ResidualGateOK"),
+                fail_result(check_name, *status_result.failure_codes),
+            )
+        if status_view.status in {
+            LifecycleStatus.STALE,
+            LifecycleStatus.REVOKED,
+            LifecycleStatus.UNKNOWN,
+        }:
+            return self._resolution(
+                envelope,
+                target,
+                edge,
+                status_view,
+                raw_result,
+                pass_result("MigrationOK"),
+                pass_result("RedactionOK"),
+                pass_result("ResidualGateOK"),
+                fail_result(check_name, FailureCode.STATUS_BLOCKS_SUPPORT),
+            )
+        migration = self._migration_check(envelope, status_view)
+        redaction = self._redaction_check(envelope)
+        residual_gate = self._residual_gate_check(envelope)
+        failures = migration.failure_codes + redaction.failure_codes + residual_gate.failure_codes
+        result = (
+            fail_result(check_name, *failures)
+            if failures
+            else pass_result(check_name, evidence_refs=(ref.object_id,))
+        )
+        return self._resolution(
+            envelope,
+            target,
+            edge,
+            status_view,
+            raw_result,
+            migration,
+            redaction,
+            residual_gate,
+            result,
+        )
+
+    def _status_view(self, envelope: ObjectEnvelope) -> tuple[StatusView, CheckResult]:
+        folded = _status_fold_from_payload(envelope.object_id, envelope.payload)
+        if folded is not None:
+            return folded
+        status = _status_from_payload(envelope.payload)
+        if envelope.status_ref is not None:
+            _, target, result = self.raw.resolve(envelope.status_ref)
+            if not result.passed:
+                return (
+                    StatusView(envelope.object_id, LifecycleStatus.UNKNOWN),
+                    fail_result("StatusOK", FailureCode.UNRESOLVED_REFERENCE),
+                )
+            folded = _status_fold_from_payload(envelope.object_id, target)
+            if folded is not None:
+                return folded
+            status = _status_from_payload(target)
+        if status is None:
+            return (
+                StatusView(envelope.object_id, LifecycleStatus.UNKNOWN),
+                residual_result(
+                    "StatusOK",
+                    FailureCode.STATUS_BLOCKS_SUPPORT,
+                    suggested_repair_hooks=("attach_status_ref_or_lifecycle_status",),
+                ),
+            )
+        return StatusView(envelope.object_id, status), pass_result("StatusOK")
+
+    def _migration_check(self, envelope: ObjectEnvelope, status_view: StatusView) -> CheckResult:
+        if status_view.status != LifecycleStatus.MIGRATED:
+            return pass_result("MigrationOK")
+        payload = envelope.payload
+        witness = payload.get("migration_witness_ref") or payload.get("migration_witness")
+        catalogue_witness = any(
+            key[0] == envelope.schema_id and key[1] == envelope.schema_version
+            for key in self.schema_catalogue.migration_witnesses
+        )
+        if witness or catalogue_witness:
+            return pass_result("MigrationOK")
+        return fail_result("MigrationOK", FailureCode.STATUS_BLOCKS_SUPPORT)
+
+    def _redaction_check(self, envelope: ObjectEnvelope) -> CheckResult:
+        redacted = bool(envelope.payload.get("redacted")) or (
+            _status_from_payload(envelope.payload) == LifecycleStatus.REVOKED
+            and bool(envelope.payload.get("redaction"))
+        )
+        if not redacted:
+            return pass_result("RedactionOK")
+        if envelope.residual_refs or envelope.payload.get("redaction_residual_refs"):
+            return pass_result("RedactionOK")
+        return fail_result("RedactionOK", FailureCode.STATUS_BLOCKS_SUPPORT)
+
+    def _residual_gate_check(self, envelope: ObjectEnvelope) -> CheckResult:
+        gates = envelope.payload.get("residual_gates", ())
+        if isinstance(gates, list | tuple) and gates:
+            return fail_result(
+                "ResidualGateOK",
+                FailureCode.AUTHORITY_MISMATCH,
+                residual_refs=tuple(str(item) for item in gates),
+            )
+        return pass_result("ResidualGateOK")
+
+    def _resolution(
+        self,
+        envelope: ObjectEnvelope | None,
+        target: Any | None,
+        edge: ReferenceEdge | None,
+        status_view: StatusView | None,
+        digest_check: CheckResult,
+        migration_check: CheckResult,
+        redaction_check: CheckResult,
+        residual_gate_check: CheckResult,
+        result: CheckResult,
+    ) -> SupportResolution:
+        return SupportResolution(
+            envelope=envelope,
+            pointer_target=target,
+            reference_edge=edge,
+            status_view=status_view,
+            digest_check=digest_check,
+            migration_check=migration_check,
+            redaction_check=redaction_check,
+            residual_gate_check=residual_gate_check,
+            check_result=result,
+        )
+
+
+def _status_from_payload(value: object) -> LifecycleStatus | None:
+    if not isinstance(value, dict):
+        return None
+    for key in ("lifecycle_status", "status", "decision_status", "post_status"):
+        if key in value:
+            try:
+                return LifecycleStatus(str(value[key]))
+            except ValueError:
+                return LifecycleStatus.UNKNOWN
+    payload = value.get("payload")
+    if isinstance(payload, dict):
+        return _status_from_payload(payload)
+    return None
+
+
+def _status_fold_from_payload(
+    object_id: str, value: object
+) -> tuple[StatusView, CheckResult] | None:
+    if not isinstance(value, dict):
+        return None
+    raw_events = value.get("status_events")
+    if not isinstance(raw_events, list):
+        return None
+    events: list[StatusEvent] = []
+    for raw in raw_events:
+        if not isinstance(raw, dict):
+            return None
+        try:
+            events.append(
+                StatusEvent(
+                    object_id=str(raw.get("object_id", object_id)),
+                    pre_status=LifecycleStatus(str(raw.get("pre_status", "unknown"))),
+                    post_status=LifecycleStatus(str(raw.get("post_status", "unknown"))),
+                    cause=str(raw.get("cause", "status fold")),
+                    actor_authority_ref=str(raw.get("actor_authority_ref", "local")),
+                    ledger_event_ref=str(raw.get("ledger_event_ref", "")),
+                    invalidation_trigger=str(raw.get("invalidation_trigger", "")),
+                    migration_target=str(raw.get("migration_target", "")),
+                    residual_disposition=tuple(
+                        str(item) for item in raw.get("residual_disposition", ())
+                    ),
+                    predecessor_event_ref=raw.get("predecessor_event_ref"),
+                    provenance=tuple(str(item) for item in raw.get("provenance", ())),
+                    status_event_id=str(raw.get("status_event_id") or raw.get("id") or ""),
+                )
+            )
+        except ValueError:
+            return StatusFold().fold(object_id, [])
+    return StatusFold().fold(object_id, events)

@@ -8,6 +8,7 @@ from enum import StrEnum
 from typing import Any
 
 from verification_ecology_kit.ids import new_id
+from verification_ecology_kit.model.circulation import LocalSovereignty
 from verification_ecology_kit.model.ledger import ResidualLedger
 from verification_ecology_kit.model.packets import (
     REQUIRED_CORE_FIELDS,
@@ -19,7 +20,6 @@ from verification_ecology_kit.model.packets import (
 from verification_ecology_kit.model.records import (
     OriginKind,
     ResidualKind,
-    TrustStatus,
     Visibility,
     jsonable,
 )
@@ -55,6 +55,9 @@ class OperationReport:
     core_monotonicity: CheckResult
     residual_totality: CheckResult
     boundary_safety: CheckResult
+    ecological_invariants: CheckResult = field(
+        default_factory=lambda: pass_result("EcologicalInvariants")
+    )
     schema_overclosure_risk: CheckResult = field(
         default_factory=lambda: pass_result("SchemaOverclosureRisk")
     )
@@ -78,16 +81,15 @@ class PacketOperationEngine:
         child.packet_id = new_id("pkt")
         if child.origin is None:
             child.origin = PacketOrigin(created_from=OriginKind.RESIDUAL)
-        child.origin.lineage.append(packet.packet_id)
-        child.origin.parent_packets.append(packet.packet_id)
-        child.origin.inherited_residuals.extend(
-            residual.residual_id for residual in packet.residual_obligations
-        )
+        self._preserve_parent_context(child, (packet,))
         return self._finalize(PacketOperationName.FORK, (packet,), child, reason=reason)
 
     def specialize(self, packet: VerifierPacket, *, scope: str) -> OperationReport:
         child = copy.deepcopy(packet)
         child.packet_id = new_id("pkt")
+        if child.origin is None:
+            child.origin = PacketOrigin(created_from=OriginKind.HUMAN_SPECIFICATION)
+        self._preserve_parent_context(child, (packet,))
         if child.scope is not None:
             child.scope.applies_to.append(scope)
         return self._finalize(PacketOperationName.SPECIALIZE, (packet,), child, reason="specialize")
@@ -97,6 +99,9 @@ class PacketOperationEngine:
     ) -> OperationReport:
         child = copy.deepcopy(packet)
         child.packet_id = new_id("pkt")
+        if child.origin is None:
+            child.origin = PacketOrigin(created_from=OriginKind.HUMAN_SPECIFICATION)
+        self._preserve_parent_context(child, (packet,))
         residuals: list[ResidualRecord] = []
         if residualize_scope_loss:
             residual = ResidualRecord(
@@ -122,18 +127,13 @@ class PacketOperationEngine:
         child.packet_id = new_id("pkt")
         if child.origin is None:
             child.origin = PacketOrigin(created_from=OriginKind.CONTRAST)
-        child.origin.lineage.extend([left.packet_id, right.packet_id])
-        child.origin.parent_packets.extend([left.packet_id, right.packet_id])
-        child.origin.inherited_residuals.extend(
-            residual.residual_id
-            for packet in (left, right)
-            for residual in packet.residual_obligations
-        )
+        self._preserve_parent_context(child, (left, right))
         existing_residual_ids = {residual.residual_id for residual in child.residual_obligations}
         for residual in right.residual_obligations:
             if residual.residual_id not in existing_residual_ids:
                 child.residual_obligations.append(copy.deepcopy(residual))
                 existing_residual_ids.add(residual.residual_id)
+        self._append_unique(child.counter_packet_refs, right.counter_packet_refs)
         if child.boundary_refs is None:
             child.boundary_refs = BoundaryRefs()
         child.boundary_refs.reachability_certificate_refs = []
@@ -165,13 +165,22 @@ class PacketOperationEngine:
     def contrast(self, left: VerifierPacket, right: VerifierPacket) -> OperationReport:
         child = VerifierPacket.minimal(created_from=OriginKind.CONTRAST)
         assert child.origin is not None
-        child.origin.lineage.extend([left.packet_id, right.packet_id])
+        self._preserve_parent_context(child, (left, right))
+        existing_residual_ids = {residual.residual_id for residual in child.residual_obligations}
+        for packet in (left, right):
+            for residual in packet.residual_obligations:
+                if residual.residual_id not in existing_residual_ids:
+                    child.residual_obligations.append(copy.deepcopy(residual))
+                    existing_residual_ids.add(residual.residual_id)
         child.question_form = {"contrast": [left.packet_id, right.packet_id]}
         return self._finalize(PacketOperationName.CONTRAST, (left, right), child, reason="contrast")
 
     def repair(self, packet: VerifierPacket, *, repair_note: str) -> OperationReport:
         child = copy.deepcopy(packet)
         child.packet_id = new_id("pkt")
+        if child.origin is None:
+            child.origin = PacketOrigin(created_from=OriginKind.RESIDUAL)
+        self._preserve_parent_context(child, (packet,))
         if child.update_profile is not None:
             child.update_profile.repair_conditions.append(repair_note)
         return self._finalize(PacketOperationName.REPAIR, (packet,), child, reason="repair")
@@ -196,64 +205,30 @@ class PacketOperationEngine:
         child = copy.deepcopy(packet)
         if child.circulation_status is None:
             child.circulation_status = CirculationStatus()
-        if translated and boundary_checked:
-            was_external = packet.circulation_status and packet.circulation_status.trust_status in {
-                TrustStatus.EXTERNAL_CANDIDATE,
-                TrustStatus.LOW_TRUST,
-                TrustStatus.ADVERSARIAL,
-                TrustStatus.UNKNOWN,
-            }
-            quarantine_first = packet.circulation_status and (
-                packet.circulation_status.visibility == Visibility.QUARANTINED
-                or packet.circulation_status.local_internalization_status.startswith("quarantined")
-            )
-            has_translation_record = bool(
-                child.circulation_status.translation_residual_refs
-                or (child.residual_hooks and child.residual_hooks.unresolved_residual_refs)
-            )
-            if was_external and (not quarantine_first or not has_translation_record):
-                child.circulation_status.visibility = Visibility.QUARANTINED
-                residual = ResidualRecord(
-                    kind=ResidualKind.TRANSLATION_RESIDUAL,
-                    origin=packet.packet_id,
-                    scope=("internalization", "quarantine_first"),
-                    obligation=(
-                        "External packet requires quarantine-first translation residual handling"
-                    ),
-                    exposure="blocks_support",
-                )
-                child.residual_obligations.append(residual)
-                child.circulation_status.translation_residual_refs.append(residual.residual_id)
-                return self._finalize(
-                    PacketOperationName.INTERNALIZE,
-                    (packet,),
-                    child,
-                    reason="internalize",
-                    extra_residuals=[residual],
-                    boundary_checked=False,
-                )
-            child.circulation_status.trust_status = TrustStatus.LOCAL
-            child.circulation_status.visibility = Visibility.PRIVATE
-            child.circulation_status.local_internalization_status = "internalized"
-        else:
-            child.circulation_status.visibility = Visibility.QUARANTINED
-            residual = ResidualRecord(
-                kind=ResidualKind.TRANSLATION_RESIDUAL,
-                origin=packet.packet_id,
-                scope=("internalization",),
-                obligation=(
-                    "External packet must be translated and boundary-checked before internalization"
-                ),
-                exposure="blocks_support",
-            )
-            child.residual_obligations.append(residual)
+        residuals_handled = bool(
+            child.circulation_status.translation_residual_refs
+            or (child.residual_hooks and child.residual_hooks.unresolved_residual_refs)
+        )
+        result = LocalSovereignty().internalize(
+            child,
+            translated=translated,
+            boundary_checked=boundary_checked,
+            residuals_handled=residuals_handled,
+            local_counter_packet_hook=bool(child.counter_packet_refs),
+        )
+        if not result.internalized:
+            residuals = [
+                residual
+                for residual in child.residual_obligations
+                if residual.residual_id in result.residual_refs
+            ]
             return self._finalize(
                 PacketOperationName.INTERNALIZE,
                 (packet,),
                 child,
                 reason="internalize",
-                extra_residuals=[residual],
-                boundary_checked=boundary_checked,
+                extra_residuals=residuals,
+                boundary_checked=False,
             )
         return self._finalize(
             PacketOperationName.INTERNALIZE,
@@ -325,10 +300,14 @@ class PacketOperationEngine:
         )
         lineage = self._check_lineage_laundering(inputs, output)
         schema_risk = self._check_schema_overclosure_risk(output)
+        ecological = self._check_ecological_invariants(
+            inputs, output, boundary_checked=boundary_checked
+        )
         admissibility = self._check_operation_admissibility(
             core=core,
             residual_totality=residual_totality,
             boundary=boundary,
+            ecological=ecological,
             lineage=lineage,
             schema_risk=schema_risk,
         )
@@ -340,6 +319,7 @@ class PacketOperationEngine:
             core_monotonicity=core,
             residual_totality=residual_totality,
             boundary_safety=boundary,
+            ecological_invariants=ecological,
             schema_overclosure_risk=schema_risk,
             lineage_laundering=lineage,
             ledger_event_refs=tuple(event_refs),
@@ -369,10 +349,11 @@ class PacketOperationEngine:
         core: CheckResult,
         residual_totality: CheckResult,
         boundary: CheckResult,
+        ecological: CheckResult,
         lineage: CheckResult,
         schema_risk: CheckResult,
     ) -> CheckResult:
-        checks = (core, residual_totality, boundary, lineage, schema_risk)
+        checks = (core, residual_totality, boundary, ecological, lineage, schema_risk)
         if all(check.passed for check in checks):
             return pass_result("OperationAdmissibility")
         residual_refs = tuple(ref for check in checks for ref in check.residual_refs)
@@ -416,3 +397,132 @@ class PacketOperationEngine:
                 suggested_repair_hooks=("schema_repair", "schema_fork", "local_extension"),
             )
         return pass_result("SchemaOverclosureRisk")
+
+    def _check_ecological_invariants(
+        self,
+        inputs: tuple[VerifierPacket, ...],
+        output: VerifierPacket,
+        *,
+        boundary_checked: bool,
+    ) -> CheckResult:
+        findings: list[str] = []
+        residual_refs: list[str] = []
+        if output.origin is None:
+            findings.append("missing_origin")
+        else:
+            preserved_parent_ids = set(output.origin.lineage) | set(output.origin.parent_packets)
+            for packet in inputs:
+                if (
+                    output.packet_id != packet.packet_id
+                    and packet.ecological_invariants.preserve_origin
+                    and packet.packet_id not in preserved_parent_ids
+                ):
+                    findings.append(f"origin:{packet.packet_id}")
+
+        output_residual_ids = {residual.residual_id for residual in output.residual_obligations}
+        inherited_residual_ids = set(output.origin.inherited_residuals) if output.origin else set()
+        hook_residual_ids = (
+            set(output.residual_hooks.merge_loss_residual_refs) if output.residual_hooks else set()
+        )
+        for packet in inputs:
+            if not packet.ecological_invariants.preserve_residuals:
+                continue
+            for residual in packet.residual_obligations:
+                if (
+                    residual.residual_id not in output_residual_ids | inherited_residual_ids
+                    and residual.residual_id not in hook_residual_ids
+                ):
+                    findings.append(f"residual:{residual.residual_id}")
+                    residual_refs.append(residual.residual_id)
+
+        output_boundaries = self._boundary_ref_set(output)
+        inherited_boundaries = (
+            set(output.boundary_refs.inherited_boundary_refs) if output.boundary_refs else set()
+        )
+        boundary_loss_residualized = any(
+            residual.kind in {ResidualKind.UNEXCLUDED, ResidualKind.MIGRATION_RESIDUAL}
+            and "boundary" in residual.scope
+            for residual in output.residual_obligations
+        )
+        for packet in inputs:
+            if not packet.ecological_invariants.preserve_boundaries:
+                continue
+            missing = self._boundary_ref_set(packet) - output_boundaries - inherited_boundaries
+            if missing and boundary_checked and not boundary_loss_residualized:
+                findings.append(f"boundary:{','.join(sorted(missing))}")
+
+        output_counter_refs = set(output.counter_packet_refs)
+        counter_loss_residualized = any(
+            residual.kind == ResidualKind.MISSING_COUNTER
+            for residual in output.residual_obligations
+        )
+        for packet in inputs:
+            if not packet.ecological_invariants.preserve_counter_packet_route:
+                continue
+            missing = set(packet.counter_packet_refs) - output_counter_refs
+            if missing and not counter_loss_residualized:
+                findings.append(f"counter:{','.join(sorted(missing))}")
+
+        if output.residual_obligations and output.residual_hooks is None:
+            findings.append("residual_hooks")
+
+        if findings:
+            return residual_result(
+                "EcologicalInvariants",
+                FailureCode.MIGRATION_LOSS,
+                residual_refs=tuple(residual_refs),
+                suggested_repair_hooks=("preserve_or_residualize_ecological_invariant_loss",),
+            )
+        return pass_result("EcologicalInvariants")
+
+    def _preserve_parent_context(
+        self,
+        child: VerifierPacket,
+        parents: tuple[VerifierPacket, ...],
+    ) -> None:
+        if child.origin is None:
+            child.origin = PacketOrigin(created_from=OriginKind.HUMAN_SPECIFICATION)
+        self._append_unique(child.origin.lineage, [packet.packet_id for packet in parents])
+        self._append_unique(child.origin.parent_packets, [packet.packet_id for packet in parents])
+        self._append_unique(
+            child.origin.inherited_residuals,
+            [
+                residual.residual_id
+                for packet in parents
+                for residual in packet.residual_obligations
+            ],
+        )
+        self._append_unique(child.origin.inherited_boundaries, self._parent_boundary_refs(parents))
+        if child.boundary_refs is None:
+            child.boundary_refs = BoundaryRefs()
+        self._append_unique(
+            child.boundary_refs.inherited_boundary_refs, child.origin.inherited_boundaries
+        )
+        self._append_unique(
+            child.counter_packet_refs,
+            [ref for packet in parents for ref in packet.counter_packet_refs],
+        )
+
+    def _parent_boundary_refs(self, parents: tuple[VerifierPacket, ...]) -> list[str]:
+        refs: list[str] = []
+        for packet in parents:
+            refs.extend(sorted(self._boundary_ref_set(packet)))
+        return refs
+
+    def _boundary_ref_set(self, packet: VerifierPacket) -> set[str]:
+        if packet.boundary_refs is None:
+            return set()
+        return {
+            ref
+            for ref in (
+                packet.boundary_refs.destructive_boundary_ref,
+                packet.boundary_refs.narrowing_boundary_ref,
+                *packet.boundary_refs.reachability_certificate_refs,
+            )
+            if ref
+        }
+
+    def _append_unique(self, target: list[str], values: list[str]) -> None:
+        for value in values:
+            if value and value not in target:
+                target.append(value)

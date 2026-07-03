@@ -3,18 +3,19 @@
 from __future__ import annotations
 
 from verification_ecology_kit.audit.reports import AuditFinding, AuditReport
-from verification_ecology_kit.model.aperture import Aperture
+from verification_ecology_kit.model.aperture import Aperture, ApertureComparison
 
 
 def audit_aperture_regression(before: Aperture, after: Aperture) -> AuditReport:
     findings: list[AuditFinding] = []
-    if before.strict_capacity_leq(after):
+    comparison = before.compare(after)
+    if comparison in {ApertureComparison.PRESERVED, ApertureComparison.ENLARGED}:
         return AuditReport(
             audit_name="aperture-regression",
             decision="pass",
-            passed_checks=["strict_capacity_comparison"],
+            passed_checks=[f"aperture_comparison:{comparison.value}"],
         ).finalize()
-    if before.accountable_loss_leq(after):
+    if comparison == ApertureComparison.NARROWED_WITH_RESIDUAL:
         findings.append(
             AuditFinding(
                 code="accountable_aperture_loss",

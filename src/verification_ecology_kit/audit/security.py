@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import tarfile
 import zipfile
+from math import log2
 from pathlib import Path
 
 from verification_ecology_kit.audit.allowlist import load_allowlist
@@ -26,7 +27,20 @@ TOKEN_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("slack_token", re.compile(r"(xox" + r"[abprs]-[A-Za-z0-9\-]{20,})")),
     ("google_api_key", re.compile(r"(AI" + r"za[0-9A-Za-z_\-]{20,})")),
     ("cloud_credential", re.compile(r"((?:AK" + r"IA|ASIA)[A-Z0-9]{16})")),
+    (
+        "jwt",
+        re.compile(r"eyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}"),
+    ),
+    (
+        "anthropic_token",
+        re.compile(r"(sk-ant-[A-Za-z0-9_\-]{20,})"),
+    ),
+    (
+        "azure_key",
+        re.compile(r"([A-Za-z0-9/+]{43}=)"),
+    ),
 )
+HIGH_ENTROPY_PATTERN = re.compile(r"\b[A-Za-z0-9_\-+/]{32,}\b")
 
 
 def scan_secrets(
@@ -61,6 +75,21 @@ def scan_secrets(
                         evidence_refs=(file_path.as_posix(),),
                     )
                 )
+        for match in HIGH_ENTROPY_PATTERN.finditer(text):
+            value = match.group(0)
+            if _value_allowed(value, allowed_values, allowed_regexes):
+                continue
+            if _high_entropy_allowed_by_context(file_path):
+                continue
+            if _looks_high_entropy(value):
+                findings.append(
+                    AuditFinding(
+                        "high_entropy_secret",
+                        f"{_redacted(value)} in {file_path.as_posix()}",
+                        "medium",
+                        evidence_refs=(file_path.as_posix(),),
+                    )
+                )
         if file_path.name.startswith(".env") and file_path.name != ".env.example":
             findings.append(
                 AuditFinding(
@@ -91,6 +120,24 @@ def _value_allowed(
 def _redacted(value: str) -> str:
     prefix = value.split("-", 1)[0] if "-" in value else value[:4]
     return f"{prefix}[redacted]"
+
+
+def _looks_high_entropy(value: str) -> bool:
+    if len(value) < 32:
+        return False
+    counts = {char: value.count(char) for char in set(value)}
+    entropy = -sum((count / len(value)) * log2(count / len(value)) for count in counts.values())
+    return (
+        entropy >= 4.5
+        and any(char.isdigit() for char in value)
+        and any(char.isalpha() for char in value)
+    )
+
+
+def _high_entropy_allowed_by_context(file_path: Path) -> bool:
+    if file_path.name in {"uv.lock"}:
+        return True
+    return "tests" in file_path.parts
 
 
 def verify_package_paths(paths: list[Path]) -> AuditReport:

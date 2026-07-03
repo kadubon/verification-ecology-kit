@@ -1,7 +1,17 @@
 # verification-ecology-kit
 
-`verification-ecology-kit` is a Python toolkit for making verification work
-clear, traceable, and reviewable.
+`verification-ecology-kit` is a stable operational toolkit for VET-style
+records, schemas, residual ledgers, conformance reports, packet operations, and
+audits.
+
+It is built for a simple problem: verification work often produces more than
+one word of output. A result can pass, fail, need more evidence, depend on a
+stale source, hide an unresolved boundary, or be usable for research but not
+safe for deployment. This package gives those differences a structured form.
+
+It is not a complete formal semantics or theorem prover for Verifier Ecology
+Theory. It is a practical Python and JSON implementation for recording,
+checking, and auditing verification evidence.
 
 It helps you answer practical questions such as:
 
@@ -19,6 +29,21 @@ https://doi.org/10.5281/zenodo.21147093
 The theory uses precise terms. This package turns many of those terms into
 ordinary software objects: JSON records, Python classes, command line checks,
 schemas, audit reports, and release gates.
+
+## Who This Is For
+
+Use this project if you need verification claims to leave an inspectable trail.
+Typical users include:
+
+- researchers recording how a claim was checked
+- engineers reviewing JSON records, schemas, digests, or evidence bundles
+- safety and quality teams tracking unresolved issues across review steps
+- tool builders who need reusable records for checks, residuals, authority
+  decisions, and audit reports
+- release maintainers who want local gates before publishing a package
+
+The package is also useful when different teams or tools need to agree on what
+was checked, what remains open, and what a result is allowed to support.
 
 ## What This Package Does
 
@@ -45,6 +70,24 @@ It is useful for research tooling, safety review, software quality assurance,
 schema-based workflows, release checks, and projects where verification claims
 need a visible paper trail.
 
+## Inputs And Outputs
+
+Most workflows use plain files.
+
+| You provide | The package produces |
+| --- | --- |
+| JSON records | schema validation results |
+| JSON objects or files | stable SHA-256 digests |
+| verifier packets | packet validation reports and residual obligations |
+| bundles of related evidence | conformance reports |
+| residual ledgers | trace and liveness checks |
+| packet populations or runtime state | runtime reports and generated follow-up packets |
+| repository paths | secret, local information, and package-content scan reports |
+
+The output is designed to be machine-readable first and human-readable when
+requested, so it can be used in local scripts, CI, review notes, or research
+artifacts.
+
 ## What This Package Does Not Do
 
 This is not a theorem prover and does not claim to prove every property in the
@@ -60,7 +103,34 @@ In short:
 - it records and checks verification evidence
 - it keeps unfinished work visible
 - it helps decide whether evidence can be reused
-- it does not magically prove that a system is correct
+- it does not prove by itself that a system is correct
+
+## Semantic Completeness Boundary
+
+Verifier Ecology Theory is broader than this software package. The package
+implements an operational subset: records, schema contracts, reference and
+digest checks, residual accounting, support-aware authority checks, packet
+operation checks, runtime reports, and local audits.
+
+That means:
+
+- `JValid` is reconstructed from available contract, context, subject, and
+  digest material when conformance data contains enough information.
+- Authority is derived from explicit support evidence and is deny-by-default.
+- Residual ledgers are replay checked so tampered event digests are rejected.
+- Runtime checks report structured stages instead of unlabeled strings.
+- Packet operations preserve or residualize origin, residual, boundary, and
+  counter-packet obligations.
+
+It does not mean:
+
+- every theorem in the paper is mechanically proved
+- every possible verifier ecology can be fully modeled
+- external evidence is trusted without records, digests, and status checks
+- an `allow` label is enough to authorize use without support evidence
+
+When the package cannot decide a claim, it should preserve the issue as a
+residual rather than silently treating the claim as closed.
 
 ## Start Here
 
@@ -79,6 +149,17 @@ Choose the path that matches what you want to do.
 | Understand the theory mapping | [docs/theory_mapping.md](docs/theory_mapping.md) and [docs/v1_audit.md](docs/v1_audit.md) |
 | Review release readiness | [docs/v1_readiness.md](docs/v1_readiness.md), [docs/release_readiness.md](docs/release_readiness.md), and [docs/release_gates.md](docs/release_gates.md) |
 | Check security posture | [SECURITY.md](SECURITY.md) and [docs/security.md](docs/security.md) |
+
+Recommended reading order for a first pass:
+
+1. Read [Core Ideas In Plain Words](#core-ideas-in-plain-words).
+2. Run [Try It In 5 Minutes](#try-it-in-5-minutes).
+3. Open [docs/quickstart.md](docs/quickstart.md) for a complete walkthrough.
+4. Use [docs/cli.md](docs/cli.md) or [docs/api.md](docs/api.md) depending on
+   whether you want shell commands or Python code.
+5. Check [docs/v1_audit.md](docs/v1_audit.md) when you need to know which
+   theory-facing claims are implemented as full objects, operational checks,
+   partial semantic checks, or residualized interfaces.
 
 ## Core Ideas In Plain Words
 
@@ -101,6 +182,10 @@ for real review work. A check can pass while still depending on assumptions. A
 tool can be useful but too stale for deployment. A record can be valid JSON but
 still unsafe to circulate. This package keeps those differences visible.
 
+The main rule is: do not hide unfinished verification work. If something is
+unknown, stale, missing, redacted, untranslated, or outside a checked boundary,
+record it as a residual and route it for follow-up.
+
 ## How The Pieces Fit Together
 
 A common workflow looks like this:
@@ -117,6 +202,16 @@ A common workflow looks like this:
 You can use only one part of the package, such as schema validation or digest
 checking, but the full workflow is designed to keep evidence, gaps, and
 decisions connected.
+
+```mermaid
+flowchart LR
+    A["Verifier packet"] --> B["Schema and digest checks"]
+    B --> C["Evidence bundle"]
+    C --> D["Conformance report"]
+    D --> E["Residual ledger"]
+    E --> F["Audits and runtime follow-up"]
+    F --> G["Authority decision"]
+```
 
 ## Installation
 
@@ -388,7 +483,7 @@ Current version: `1.1.0`
 
 Status:
 
-- stable OSS implementation with v1.1 semantic hardening
+- stable operational OSS toolkit with v1.1 semantic hardening
 - typed Python package
 - command line interface included
 - JSON schemas included

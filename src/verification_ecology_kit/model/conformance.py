@@ -9,16 +9,30 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError, ValidationError
 
 from verification_ecology_kit.digest import DigestPolicy, object_digest_input
-from verification_ecology_kit.model.authority import AuthorityEngine
+from verification_ecology_kit.model.authority import AuthorityDecision, AuthorityEngine
+from verification_ecology_kit.model.judgments import jvalid
 from verification_ecology_kit.model.ledger import ResidualLedger
 from verification_ecology_kit.model.lifecycle import StatusEvent, StatusFold, StatusView
-from verification_ecology_kit.model.records import ConformanceProfile, LifecycleStatus, jsonable
+from verification_ecology_kit.model.records import (
+    AuthorityDecisionValue,
+    ConformanceProfile,
+    LifecycleStatus,
+    jsonable,
+)
 from verification_ecology_kit.model.residuals import check_residual_liveness
+from verification_ecology_kit.model.serde import (
+    auth_inputs_from_json,
+    judgment_contract_from_json,
+    judgment_record_from_json,
+    object_ref_from_json,
+    use_context_from_json,
+)
 from verification_ecology_kit.references import (
     ObjectEnvelope,
     ObjectRef,
     ReferenceResolver,
     SchemaCatalogue,
+    SupportReferenceResolver,
 )
 from verification_ecology_kit.result import (
     CheckResult,
@@ -224,6 +238,11 @@ class ConformanceEngine:
 
     def _check_judgmentok(self, bundle: VetBundle) -> CheckResult:
         evidence_refs: list[str] = []
+        support_resolver = SupportReferenceResolver(
+            bundle_id=bundle.bundle_id,
+            envelopes=bundle.objects,
+            schema_catalogue=bundle.schema_catalogue,
+        )
         for item in bundle.judgment_records:
             record = self._record_dict(item)
             if record is None:
@@ -249,12 +268,29 @@ class ConformanceEngine:
             allowed_results = record.get("allowed_results")
             if isinstance(allowed_results, list) and record.get("result") not in allowed_results:
                 return fail_result("JudgmentOK", FailureCode.JUDGMENT_INVALID)
+            reconstructed = self._run_reconstructed_jvalid(bundle, support_resolver, record)
+            if reconstructed is not None:
+                if not reconstructed.passed:
+                    return fail_result("JudgmentOK", *reconstructed.failure_codes)
+                judgment_id = record.get("judgment_id")
+                if judgment_id is not None:
+                    evidence_refs.append(str(judgment_id))
+                continue
             jvalid = str(
                 record.get("jvalid_result", record.get("JValid_result", "not_checked"))
             ).lower()
             if jvalid == "fail":
                 return fail_result("JudgmentOK", FailureCode.JUDGMENT_INVALID)
-            if jvalid not in {"pass", "not_applicable"}:
+            if jvalid == "pass":
+                return fail_result(
+                    "JudgmentOK",
+                    FailureCode.JUDGMENT_INVALID,
+                    suggested_repair_hooks=("provide_judgment_record_use_context_and_contract",),
+                )
+            if jvalid == "not_applicable":
+                if record.get("authority_use") or record.get("operational_use"):
+                    return fail_result("JudgmentOK", FailureCode.JUDGMENT_INVALID)
+            elif jvalid not in {"not_applicable"}:
                 return residual_result(
                     "JudgmentOK",
                     FailureCode.JUDGMENT_INVALID,
@@ -281,6 +317,11 @@ class ConformanceEngine:
         return pass_result("ResidualOK")
 
     def _check_authorityok(self, bundle: VetBundle) -> CheckResult:
+        support_resolver = SupportReferenceResolver(
+            bundle_id=bundle.bundle_id,
+            envelopes=bundle.objects,
+            schema_catalogue=bundle.schema_catalogue,
+        )
         for item in bundle.authority_decisions:
             record = self._record_dict(item)
             if record is None:
@@ -295,10 +336,45 @@ class ConformanceEngine:
             }:
                 return fail_result("AuthorityOK", FailureCode.AUTHORITY_MISMATCH)
             if decision == "allow":
-                required_support = tuple(record.get("required_support_refs", ()))
+                required_support_items = list(record.get("required_support_refs", ()))
+                auth_inputs_data = self._auth_inputs_payload(bundle, record)
+                if auth_inputs_data is not None:
+                    try:
+                        auth_inputs = auth_inputs_from_json(
+                            auth_inputs_data,
+                            bundle_id=bundle.bundle_id,
+                        )
+                    except ValueError:
+                        return fail_result("AuthorityOK", FailureCode.AUTHORITY_MISMATCH)
+                    required_support_items.extend(auth_inputs.support_refs)
+                    if auth_inputs.counterexample_refs:
+                        return fail_result(
+                            "AuthorityOK",
+                            FailureCode.AUTHORITY_MISMATCH,
+                            residual_refs=auth_inputs.counterexample_refs,
+                        )
+                elif required_support_items:
+                    return fail_result(
+                        "AuthorityOK",
+                        FailureCode.AUTHORITY_MISMATCH,
+                        suggested_repair_hooks=("attach_auth_inputs_ref",),
+                    )
+                required_support = tuple(str(ref) for ref in required_support_items)
                 support_judgments = tuple(record.get("support_judgment_refs", ()))
                 if required_support and not support_judgments:
                     return fail_result("AuthorityOK", FailureCode.AUTHORITY_MISMATCH)
+                support_blockers: list[str] = []
+                for value in required_support_items:
+                    ref = self._support_ref_from_any(bundle, value)
+                    resolution = support_resolver.resolve_support(ref, require_object=True)
+                    if not resolution.check_result.passed:
+                        support_blockers.append(ref.object_id)
+                if support_blockers:
+                    return fail_result(
+                        "AuthorityOK",
+                        FailureCode.AUTHORITY_MISMATCH,
+                        residual_refs=tuple(dict.fromkeys(support_blockers)),
+                    )
                 denial_refs = self._authority_denial_refs(record)
                 if denial_refs:
                     return fail_result(
@@ -306,12 +382,16 @@ class ConformanceEngine:
                         FailureCode.AUTHORITY_MISMATCH,
                         residual_refs=denial_refs,
                     )
+                decision_record = self._authority_decision_from_record(record)
+                if decision_record is not None:
+                    decision_record.required_support_refs = required_support
+                    decision_record.support_judgment_refs = support_judgments
                 _, aggregate = AuthorityEngine().aggregate(
                     self._authority_action(record),
-                    [],
+                    [decision_record] if decision_record else [],
                     required_support_refs=required_support,
                 )
-                if not record.get("active_decision_record", True) and not aggregate.passed:
+                if not aggregate.passed:
                     return aggregate
                 continue
             if decision == "residualize":
@@ -331,6 +411,101 @@ class ConformanceEngine:
             ]
             return pass_result("AuthorityOK", evidence_refs=tuple(refs))
         return pass_result("AuthorityOK")
+
+    def _run_reconstructed_jvalid(
+        self,
+        bundle: VetBundle,
+        support_resolver: SupportReferenceResolver,
+        record: dict[str, Any],
+    ) -> CheckResult | None:
+        context_data = record.get("use_context")
+        if context_data is None and record.get("use_context_ref"):
+            context_data = self._payload_by_id(bundle, str(record["use_context_ref"]))
+        contract_data = record.get("contract")
+        if contract_data is None:
+            ref = record.get("contract_ref") or record.get("checker_or_policy_ref")
+            if ref:
+                contract_data = self._payload_by_id(bundle, str(ref))
+        if context_data is None or contract_data is None:
+            return None
+        try:
+            judgment = judgment_record_from_json(record, bundle_id=bundle.bundle_id)
+            context = use_context_from_json(context_data, bundle_id=bundle.bundle_id)
+            contract = judgment_contract_from_json(contract_data)
+        except (KeyError, ValueError):
+            return fail_result("JValid", FailureCode.JUDGMENT_INVALID)
+        subject_resolution = support_resolver.resolve_support(context.subject_ref)
+        if not subject_resolution.check_result.passed:
+            return fail_result("JValid", *subject_resolution.check_result.failure_codes)
+        input_resolution = support_resolver.resolve_support(context.resolved_input_ref)
+        if not input_resolution.check_result.passed:
+            return fail_result("JValid", *input_resolution.check_result.failure_codes)
+        if (
+            input_resolution.envelope is not None
+            and context.input_digest.value
+            and input_resolution.envelope.canonical_digest.value != context.input_digest.value
+        ):
+            return fail_result("JValid", FailureCode.DIGEST_MISMATCH)
+        return jvalid(judgment, context, contract)
+
+    def _payload_by_id(self, bundle: VetBundle, object_id: str) -> dict[str, Any] | None:
+        for envelope in bundle.objects:
+            if envelope.object_id == object_id:
+                return envelope.payload
+        return None
+
+    def _auth_inputs_payload(
+        self, bundle: VetBundle, record: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        embedded = record.get("auth_inputs")
+        if isinstance(embedded, dict):
+            return embedded
+        ref = record.get("auth_inputs_ref")
+        if isinstance(ref, str) and ref:
+            return self._payload_by_id(bundle, ref)
+        return None
+
+    def _support_ref_from_any(self, bundle: VetBundle, value: object) -> ObjectRef:
+        if isinstance(value, dict):
+            return object_ref_from_json(value, bundle_id=bundle.bundle_id)
+        object_id = str(value)
+        for envelope in bundle.objects:
+            if envelope.object_id == object_id:
+                return ObjectRef(
+                    bundle_id=bundle.bundle_id,
+                    object_id=object_id,
+                    schema_id=envelope.schema_id,
+                    digest=envelope.canonical_digest,
+                )
+        return ObjectRef(bundle_id=bundle.bundle_id, object_id=object_id, schema_id="")
+
+    def _authority_decision_from_record(self, record: dict[str, Any]) -> AuthorityDecision | None:
+        from verification_ecology_kit.digest import Digest
+        from verification_ecology_kit.model.records import AuthorityAction
+
+        try:
+            return AuthorityDecision(
+                authority_decision_id=str(record.get("authority_decision_id", "")),
+                object_id=str(record.get("object_id", "")),
+                schema_version=str(record.get("schema_version", "")),
+                canonical_digest=Digest("sha256", str(record.get("canonical_digest", ""))),
+                lifecycle_status=self._status_from_payload(record) or LifecycleStatus.ACTIVE,
+                policy_id=str(record.get("policy_id", "")),
+                action=AuthorityAction(str(record.get("action", AuthorityAction.LOCAL_USE.value))),
+                decision=AuthorityDecisionValue(str(record.get("decision", "deny"))),
+                deny_by_default=bool(record.get("deny_by_default", True)),
+                auth_inputs_ref=str(record.get("auth_inputs_ref", "")),
+                required_support_refs=tuple(
+                    str(item) for item in record.get("required_support_refs", ())
+                ),
+                support_judgment_refs=tuple(
+                    str(item) for item in record.get("support_judgment_refs", ())
+                ),
+                sandbox_required=bool(record.get("sandbox_required", False)),
+                sandbox_status=str(record.get("sandbox_status", "not_applicable")),
+            )
+        except ValueError:
+            return None
 
     def _authority_denial_refs(self, record: dict[str, Any]) -> tuple[str, ...]:
         refs: list[str] = []

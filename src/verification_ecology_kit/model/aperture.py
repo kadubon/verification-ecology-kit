@@ -3,8 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import StrEnum
 
 from verification_ecology_kit.model.records import jsonable
+
+
+class ApertureComparison(StrEnum):
+    PRESERVED = "preserved"
+    ENLARGED = "enlarged"
+    NARROWED_WITH_RESIDUAL = "narrowed_with_residual"
+    NARROWED_WITHOUT_RESIDUAL = "narrowed_without_residual"
+    INCOMPARABLE = "incomparable"
 
 
 @dataclass(frozen=True)
@@ -68,6 +77,21 @@ class Aperture:
             ):
                 return False
         return True
+
+    def compare(self, other: Aperture) -> ApertureComparison:
+        before = self.components()
+        after = other.components()
+        if len(before) != len(after):
+            return ApertureComparison.INCOMPARABLE
+        strict = self.strict_capacity_leq(other)
+        reverse = other.strict_capacity_leq(self)
+        if strict and not reverse:
+            return ApertureComparison.ENLARGED
+        if strict and reverse:
+            return ApertureComparison.PRESERVED
+        if self.accountable_loss_leq(other):
+            return ApertureComparison.NARROWED_WITH_RESIDUAL
+        return ApertureComparison.NARROWED_WITHOUT_RESIDUAL
 
     def aperture_debts(self) -> tuple[str, ...]:
         return tuple(component.name for component in self.components() if component.has_debt())

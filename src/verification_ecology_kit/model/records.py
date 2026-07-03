@@ -40,6 +40,19 @@ class ResidualKind(StrEnum):
     MISSING_COUNTER = "missing_counter"
 
 
+class ResidualMetabolismRoute(StrEnum):
+    QUESTION_FORMATION = "question_formation"
+    COUNTEREXAMPLE_SEARCH = "counterexample_search"
+    BOUNDARY_REVISION = "boundary_revision"
+    TRANSLATION = "translation"
+    PACKET_REPAIR = "packet_repair"
+    PACKET_RETIREMENT = "packet_retirement"
+    COUNTER_PACKET_GENERATION = "counter_packet_generation"
+    SCHEMA_REVISION = "schema_revision"
+    EXPLICIT_PRESERVED_UNKNOWN = "explicit_preserved_unknown"
+    QUARANTINE = "quarantine"
+
+
 class AuthorityAction(StrEnum):
     OBSERVATION = "observation"
     LOCAL_USE = "local_use"

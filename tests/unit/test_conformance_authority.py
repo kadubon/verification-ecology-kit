@@ -265,19 +265,30 @@ def test_conformance_judgment_equivalence_fields_are_enforced() -> None:
 
 def test_conformance_operational_checks_authority_support() -> None:
     envelope = ObjectEnvelope("o", "schema", "1.0", {"status": "active"})
+    support = ObjectEnvelope("support", "schema", "1.0", {"status": "active", "value": "ok"})
+    support.refresh_digest()
     envelope.refresh_digest()
     bundle = VetBundle(
         "b",
         "1",
         ConformanceProfile.OPERATIONAL,
         SchemaCatalogue("cat", {"schema": ("1.0",)}),
-        [envelope],
+        [envelope, support],
         authority_decisions=[
             {
                 "authority_decision_id": "a",
                 "decision": "allow",
                 "lifecycle_status": "active",
                 "required_support_refs": ["support"],
+                "auth_inputs": {
+                    "auth_inputs_ref": "ai",
+                    "object_id": "o",
+                    "schema_version": "1",
+                    "canonical_digest": {"algorithm_id": "sha256", "value": "abc"},
+                    "candidate_ref": "o",
+                    "action": "local_use",
+                    "support_refs": ["support"],
+                },
                 "support_judgment_refs": [],
             }
         ],
@@ -290,13 +301,15 @@ def test_conformance_operational_checks_authority_support() -> None:
 
 def test_conformance_authority_rejects_stale_and_residual_gated_allow() -> None:
     envelope = ObjectEnvelope("o", "schema", "1.0", {"status": "active"})
+    support = ObjectEnvelope("support", "schema", "1.0", {"status": "active", "value": "ok"})
+    support.refresh_digest()
     envelope.refresh_digest()
     bundle = VetBundle(
         "b",
         "1",
         ConformanceProfile.OPERATIONAL,
         SchemaCatalogue("cat", {"schema": ("1.0",)}),
-        [envelope],
+        [envelope, support],
         authority_decisions=[
             {
                 "authority_decision_id": "a",
@@ -305,6 +318,15 @@ def test_conformance_authority_rejects_stale_and_residual_gated_allow() -> None:
                 "lifecycle_status": "active",
                 "required_support_refs": ["support"],
                 "support_judgment_refs": ["judgment"],
+                "auth_inputs": {
+                    "auth_inputs_ref": "ai",
+                    "object_id": "o",
+                    "schema_version": "1",
+                    "canonical_digest": {"algorithm_id": "sha256", "value": "abc"},
+                    "candidate_ref": "o",
+                    "action": "local_use",
+                    "support_refs": ["support"],
+                },
                 "support_statuses": {"support": "stale"},
                 "residual_gates": ["residual-open"],
             }

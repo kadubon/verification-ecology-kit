@@ -9,6 +9,7 @@ from verification_ecology_kit.model.packets import VerifierPacket
 from verification_ecology_kit.model.records import OriginKind, ResidualKind
 from verification_ecology_kit.model.residuals import ResidualRecord
 from verification_ecology_kit.ports.generator import PacketGenerator
+from verification_ecology_kit.result import CheckResult
 
 
 @dataclass
@@ -26,6 +27,22 @@ class DefaultPacketGenerator(PacketGenerator):
 
 
 @dataclass
+class RuntimeStage:
+    stage_name: str
+    packet_id: str
+    check_result: CheckResult
+    notes: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "stage_name": self.stage_name,
+            "packet_id": self.packet_id,
+            "check_result": self.check_result.to_dict(),
+            "notes": self.notes,
+        }
+
+
+@dataclass
 class RuntimeReport:
     generated_packets: list[str] = field(default_factory=list)
     generated_from_residuals: list[str] = field(default_factory=list)
@@ -33,13 +50,14 @@ class RuntimeReport:
     inherited_boundary_refs: list[str] = field(default_factory=list)
     anti_overclosure_gaps: list[str] = field(default_factory=list)
     counter_packet_obligations: list[str] = field(default_factory=list)
-    quarantine_decisions: list[str] = field(default_factory=list)
-    reachability_checks: list[str] = field(default_factory=list)
-    schema_checks: list[str] = field(default_factory=list)
-    lineage_checks: list[str] = field(default_factory=list)
-    repair_or_retire_decisions: list[str] = field(default_factory=list)
-    frontier_updates: list[str] = field(default_factory=list)
-    aperture_updates: list[str] = field(default_factory=list)
+    stages: list[RuntimeStage] = field(default_factory=list)
+    quarantine_decisions: list[dict[str, object]] = field(default_factory=list)
+    reachability_checks: list[dict[str, object]] = field(default_factory=list)
+    schema_checks: list[dict[str, object]] = field(default_factory=list)
+    lineage_checks: list[dict[str, object]] = field(default_factory=list)
+    repair_or_retire_decisions: list[dict[str, object]] = field(default_factory=list)
+    frontier_updates: list[dict[str, object]] = field(default_factory=list)
+    aperture_updates: list[dict[str, object]] = field(default_factory=list)
     quarantined_packets: list[str] = field(default_factory=list)
     residuals_routed: list[str] = field(default_factory=list)
     aperture_debts: list[str] = field(default_factory=list)
@@ -54,6 +72,7 @@ class RuntimeReport:
             "inherited_boundary_refs": self.inherited_boundary_refs,
             "anti_overclosure_gaps": self.anti_overclosure_gaps,
             "counter_packet_obligations": self.counter_packet_obligations,
+            "stages": [stage.to_dict() for stage in self.stages],
             "quarantine_decisions": self.quarantine_decisions,
             "reachability_checks": self.reachability_checks,
             "schema_checks": self.schema_checks,

@@ -176,7 +176,15 @@ def test_circulation_operations_json_store_and_policy(tmp_path: Path) -> None:
     sovereignty = LocalSovereignty()
     assert sovereignty.quarantine_external(ExternalPacket(packet, "source", "clock")).passed
     assert not sovereignty.internalize(packet, translated=False, boundary_checked=True).internalized
-    assert sovereignty.internalize(packet, translated=True, boundary_checked=True).internalized
+    packet.counter_packet_refs.append("counter")
+    packet.circulation_status.translation_residual_refs.append("translation-residual")
+    assert sovereignty.internalize(
+        packet,
+        translated=True,
+        boundary_checked=True,
+        residuals_handled=True,
+        local_counter_packet_hook=True,
+    ).internalized
 
     engine = PacketOperationEngine()
     packet = VerifierPacket.minimal()
