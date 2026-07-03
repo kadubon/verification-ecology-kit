@@ -17,6 +17,13 @@ from verification_ecology_kit.model.packets import (
     VerifierPacket,
 )
 from verification_ecology_kit.model.residuals import ResidualRecord
+from verification_ecology_kit.model.semantics import (
+    AuthorityEligibility,
+    EcologyEligibility,
+    SemanticCheckReport,
+    SemanticLevel,
+    SupportEligibility,
+)
 from verification_ecology_kit.operations.base import PacketOperationEngine
 from verification_ecology_kit.references import (
     DigestRecord,
@@ -31,6 +38,7 @@ __version__ = "1.1.0"
 
 __all__ = [
     "AuditEngine",
+    "AuthorityEligibility",
     "AuthorityEngine",
     "BoundaryTesterPacket",
     "Canonicalizer",
@@ -39,6 +47,7 @@ __all__ = [
     "CounterPacket",
     "DigestPolicy",
     "DigestRecord",
+    "EcologyEligibility",
     "MaturityProfile",
     "ObjectEnvelope",
     "ObjectRef",
@@ -50,6 +59,9 @@ __all__ = [
     "ResidualRecord",
     "RuntimeEngine",
     "SchemaMigrationWitness",
+    "SemanticCheckReport",
+    "SemanticLevel",
+    "SupportEligibility",
     "TraceCertificate",
     "VerifierEcologyState",
     "VerifierPacket",

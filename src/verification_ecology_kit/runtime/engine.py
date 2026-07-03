@@ -229,9 +229,24 @@ class RuntimeEngine:
             else ()
         )
         if not refs:
+            residual = ResidualRecord(
+                kind=ResidualKind.UNEXCLUDED,
+                origin=packet.packet_id,
+                scope=("reachability", "certificate_missing"),
+                obligation="Attach reachability certificate or keep exclusion residual live",
+                exposure="blocks_authority",
+            )
+            packet.residual_obligations.append(residual)
+            if packet.residual_hooks is not None:
+                packet.residual_hooks.unresolved_residual_refs.append(residual.residual_id)
+            state.residual_ledger.add(
+                residual,
+                justification="runtime missing reachability certificate",
+            )
             return residual_result(
                 "RuntimeReachabilityCheck",
                 FailureCode.BOUNDARY_UNCHECKED,
+                residual_refs=(residual.residual_id,),
                 suggested_repair_hooks=("attach_reachability_certificate",),
             )
         missing: list[str] = []
@@ -244,10 +259,27 @@ class RuntimeEngine:
             if not result.passed:
                 return result
         if missing:
+            residuals: list[ResidualRecord] = []
+            for ref in missing:
+                residual = ResidualRecord(
+                    kind=ResidualKind.UNEXCLUDED,
+                    origin=packet.packet_id,
+                    scope=("reachability", ref),
+                    obligation=f"Resolve missing reachability certificate: {ref}",
+                    exposure="blocks_authority",
+                )
+                packet.residual_obligations.append(residual)
+                if packet.residual_hooks is not None:
+                    packet.residual_hooks.unresolved_residual_refs.append(residual.residual_id)
+                state.residual_ledger.add(
+                    residual,
+                    justification="runtime unresolved reachability certificate",
+                )
+                residuals.append(residual)
             return residual_result(
                 "RuntimeReachabilityCheck",
                 FailureCode.BOUNDARY_UNCHECKED,
-                residual_refs=tuple(missing),
+                residual_refs=tuple(residual.residual_id for residual in residuals),
                 suggested_repair_hooks=("provide_reachability_certificate_material",),
             )
         return pass_result("RuntimeReachabilityCheck", evidence_refs=refs)

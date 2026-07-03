@@ -26,7 +26,8 @@
         "nominal_capacity": { "type": "integer" },
         "feasible_capacity": { "type": "integer" },
         "exercised_capacity": { "type": "integer" },
-        "residual_obligations": { "type": "array", "items": { "type": "string" } }
+        "residual_obligations": { "type": "array", "items": { "type": "string" } },
+        "inert_residual_obligations": { "type": "array", "items": { "type": "string" } }
       },
       "required": ["nominal_capacity", "feasible_capacity", "exercised_capacity"],
       "additionalProperties": true

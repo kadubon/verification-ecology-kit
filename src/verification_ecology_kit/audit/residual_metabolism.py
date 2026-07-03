@@ -17,8 +17,24 @@ def audit_residual_metabolism(state: VerifierEcologyState) -> AuditReport:
     hoarded_classes: dict[str, int] = {}
     archived_only_classes: dict[str, int] = {}
     authority_blocking_classes: dict[str, int] = {}
+    no_route_classes: dict[str, int] = {}
+    no_resources_classes: dict[str, int] = {}
+    expired_classes: dict[str, int] = {}
+    preserved_without_reason_classes: dict[str, int] = {}
     for residual in state.residual_ledger.residuals.values():
         class_name = residual.route.route_type.value if residual.route else "unrouted"
+        if residual.route is None:
+            no_route_classes[class_name] = no_route_classes.get(class_name, 0) + 1
+        elif not residual.route.resource_quota:
+            no_resources_classes[class_name] = no_resources_classes.get(class_name, 0) + 1
+        if (
+            residual.route
+            and residual.route.route_type.value == "explicit_preserved_unknown"
+            and not residual.route.preservation_reason.strip()
+        ):
+            preserved_without_reason_classes[class_name] = (
+                preserved_without_reason_classes.get(class_name, 0) + 1
+            )
         if residual.status != LedgerStatus.ACTIVE:
             passed.append(f"{residual.residual_id}:inactive_disposition")
             archived_only_classes[class_name] = archived_only_classes.get(class_name, 0) + 1
@@ -36,12 +52,20 @@ def audit_residual_metabolism(state: VerifierEcologyState) -> AuditReport:
             inert_classes[class_name] = inert_classes.get(class_name, 0) + 1
             if residual.route is None or not residual.route.active_follow_through:
                 hoarded_classes[class_name] = hoarded_classes.get(class_name, 0) + 1
+            if residual.route and residual.route.deadline:
+                expired_classes[class_name] = expired_classes.get(class_name, 0) + 1
             findings.append(
                 AuditFinding(
                     code="liveness_debt",
                     message=f"Residual {residual.residual_id} is active without a live route",
                     evidence_refs=(residual.residual_id,),
-                    suggested_repair_hooks=("route_residual", "retire_with_reason", "quarantine"),
+                    suggested_repair_hooks=(
+                        "route_residual",
+                        "assign_resources",
+                        "extend_or_close_deadline",
+                        "retire_with_reason",
+                        "quarantine",
+                    ),
                 )
             )
     decision = "pass" if not findings else "residualize"
@@ -56,6 +80,10 @@ def audit_residual_metabolism(state: VerifierEcologyState) -> AuditReport:
             f"hoarded_classes:{hoarded_classes}",
             f"archived_only_classes:{archived_only_classes}",
             f"authority_blocking_classes:{authority_blocking_classes}",
+            f"no_route_classes:{no_route_classes}",
+            f"no_resources_classes:{no_resources_classes}",
+            f"expired_classes:{expired_classes}",
+            f"preserved_without_reason_classes:{preserved_without_reason_classes}",
         ],
         residualized_failures=residualized,
     ).finalize()

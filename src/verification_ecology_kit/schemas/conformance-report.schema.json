@@ -19,7 +19,29 @@
     "suggested_repair_hooks": { "type": "array", "items": { "type": "string" } },
     "provenance": { "type": "array", "items": { "type": "string" } },
     "checked_input_digest": { "type": ["string", "null"] },
-    "report_digest": { "type": ["string", "null"] }
+    "report_digest": { "type": ["string", "null"] },
+    "semantic_report": {
+      "type": ["object", "null"],
+      "properties": {
+        "profile": { "type": "string" },
+        "required_levels": { "type": "array", "items": { "type": "string" } },
+        "checked_levels": { "type": "array", "items": { "type": "string" } },
+        "passed_levels": { "type": "array", "items": { "type": "string" } },
+        "residualized_levels": { "type": "array", "items": { "type": "string" } },
+        "failed_levels": { "type": "array", "items": { "type": "string" } },
+        "schema_valid": { "type": "boolean" },
+        "record_valid": { "type": "boolean" },
+        "evidence_valid": { "type": "string" },
+        "support_valid": { "type": "string" },
+        "authority_valid": { "type": "string" },
+        "ecology_valid": { "type": "string" },
+        "residual_obligations": { "type": "array", "items": { "type": "string" } },
+        "failure_codes": { "type": "array", "items": { "type": "string" } },
+        "boundary_note": { "type": "string" },
+        "complete_formal_semantics_claim": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
   },
   "required": [
     "profile",
@@ -32,7 +54,8 @@
     "suggested_repair_hooks",
     "provenance",
     "checked_input_digest",
-    "report_digest"
+    "report_digest",
+    "semantic_report"
   ],
   "additionalProperties": false
 }

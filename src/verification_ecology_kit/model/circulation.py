@@ -26,6 +26,8 @@ class LocalInternalizationResult:
     boundary_checked: bool
     residuals_handled: bool
     local_counter_packet_hook: bool
+    local_scope_profiled: bool
+    authority_not_blocked: bool
     internalized: bool
     residual_refs: tuple[str, ...] = ()
 
@@ -37,6 +39,8 @@ class LocalInternalizationPipeline:
     boundary_checked: bool
     residuals_handled: bool
     local_counter_packet_hook: bool
+    local_scope_profiled: bool = False
+    authority_not_blocked: bool = False
 
     def admissible(self) -> bool:
         return (
@@ -45,6 +49,8 @@ class LocalInternalizationPipeline:
             and self.boundary_checked
             and self.residuals_handled
             and self.local_counter_packet_hook
+            and self.local_scope_profiled
+            and self.authority_not_blocked
         )
 
 
@@ -65,6 +71,8 @@ class LocalSovereignty:
         boundary_checked: bool,
         residuals_handled: bool = False,
         local_counter_packet_hook: bool = False,
+        local_scope_profiled: bool = True,
+        authority_not_blocked: bool = True,
     ) -> LocalInternalizationResult:
         if packet.circulation_status is None:
             return LocalInternalizationResult(
@@ -74,8 +82,23 @@ class LocalSovereignty:
                 boundary_checked,
                 residuals_handled,
                 local_counter_packet_hook,
+                local_scope_profiled,
+                authority_not_blocked,
                 False,
             )
+        redaction_ambiguous = (
+            packet.circulation_status.visibility == Visibility.REDACTED
+            and not packet.circulation_status.redaction_residual_refs
+        )
+        destructive_or_narrowing_boundary = bool(
+            packet.boundary_refs
+            and (
+                packet.boundary_refs.destructive_boundary_ref
+                or packet.boundary_refs.narrowing_boundary_ref
+                or packet.boundary_refs.reachability_certificate_refs
+            )
+        )
+        boundary_admissible = boundary_checked
         quarantine_first = (
             packet.circulation_status.visibility == Visibility.QUARANTINED
             or packet.circulation_status.local_internalization_status.startswith("quarantined")
@@ -83,9 +106,11 @@ class LocalSovereignty:
         pipeline = LocalInternalizationPipeline(
             quarantine_first=quarantine_first,
             translated=translated,
-            boundary_checked=boundary_checked,
-            residuals_handled=residuals_handled,
+            boundary_checked=boundary_admissible,
+            residuals_handled=residuals_handled and not redaction_ambiguous,
             local_counter_packet_hook=local_counter_packet_hook,
+            local_scope_profiled=local_scope_profiled,
+            authority_not_blocked=authority_not_blocked,
         )
         if not pipeline.admissible():
             packet.circulation_status.visibility = Visibility.QUARANTINED
@@ -95,9 +120,14 @@ class LocalSovereignty:
                 scope=("local_internalization",),
                 obligation=(
                     "External packet requires quarantine, translation, boundary checks, "
-                    "residual handling, and local counter-packet hook before internalization"
+                    "residual handling, local scope profile, authority clearance, "
+                    "and local counter-packet hook before internalization"
                 ),
                 exposure="blocks_support",
+                payload={
+                    "redaction_ambiguous": redaction_ambiguous,
+                    "destructive_or_narrowing_boundary": destructive_or_narrowing_boundary,
+                },
             )
             packet.residual_obligations.append(residual)
             packet.circulation_status.translation_residual_refs.append(residual.residual_id)
@@ -105,9 +135,11 @@ class LocalSovereignty:
                 packet.packet_id,
                 quarantine_first,
                 translated,
-                boundary_checked,
-                residuals_handled,
+                boundary_admissible,
+                residuals_handled and not redaction_ambiguous,
                 local_counter_packet_hook,
+                local_scope_profiled,
+                authority_not_blocked,
                 False,
                 (residual.residual_id,),
             )
@@ -116,6 +148,8 @@ class LocalSovereignty:
         packet.circulation_status.local_internalization_status = "internalized"
         return LocalInternalizationResult(
             packet.packet_id,
+            True,
+            True,
             True,
             True,
             True,

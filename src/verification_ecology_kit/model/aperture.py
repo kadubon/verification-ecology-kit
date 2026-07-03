@@ -11,7 +11,9 @@ from verification_ecology_kit.model.records import jsonable
 class ApertureComparison(StrEnum):
     PRESERVED = "preserved"
     ENLARGED = "enlarged"
-    NARROWED_WITH_RESIDUAL = "narrowed_with_residual"
+    NARROWED_WITH_LIVE_RESIDUAL = "narrowed_with_live_residual"
+    NARROWED_WITH_INERT_RESIDUAL = "narrowed_with_inert_residual"
+    NARROWED_WITH_RESIDUAL = "narrowed_with_live_residual"
     NARROWED_WITHOUT_RESIDUAL = "narrowed_without_residual"
     INCOMPARABLE = "incomparable"
 
@@ -27,9 +29,14 @@ class CapacityRecord:
     cost_bounds: tuple[str, ...] = ()
     latency_bounds: tuple[str, ...] = ()
     residual_obligations: tuple[str, ...] = ()
+    inert_residual_obligations: tuple[str, ...] = ()
 
     def has_debt(self) -> bool:
-        return self.nominal_capacity > self.feasible_capacity or bool(self.residual_obligations)
+        return (
+            self.nominal_capacity > self.feasible_capacity
+            or bool(self.residual_obligations)
+            or bool(self.inert_residual_obligations)
+        )
 
 
 @dataclass
@@ -74,9 +81,28 @@ class Aperture:
             if (
                 before.feasible_capacity > after.feasible_capacity
                 and not after.residual_obligations
+                and not after.inert_residual_obligations
             ):
                 return False
         return True
+
+    def loss_has_live_residuals(self, other: Aperture) -> bool:
+        for before, after in zip(self.components(), other.components(), strict=True):
+            if before.feasible_capacity > after.feasible_capacity and after.residual_obligations:
+                return True
+        return False
+
+    def loss_has_only_inert_residuals(self, other: Aperture) -> bool:
+        loss_seen = False
+        for before, after in zip(self.components(), other.components(), strict=True):
+            if before.feasible_capacity <= after.feasible_capacity:
+                continue
+            loss_seen = True
+            if after.residual_obligations:
+                return False
+            if not after.inert_residual_obligations:
+                return False
+        return loss_seen
 
     def compare(self, other: Aperture) -> ApertureComparison:
         before = self.components()
@@ -89,8 +115,12 @@ class Aperture:
             return ApertureComparison.ENLARGED
         if strict and reverse:
             return ApertureComparison.PRESERVED
+        if self.loss_has_live_residuals(other):
+            return ApertureComparison.NARROWED_WITH_LIVE_RESIDUAL
+        if self.loss_has_only_inert_residuals(other):
+            return ApertureComparison.NARROWED_WITH_INERT_RESIDUAL
         if self.accountable_loss_leq(other):
-            return ApertureComparison.NARROWED_WITH_RESIDUAL
+            return ApertureComparison.NARROWED_WITH_LIVE_RESIDUAL
         return ApertureComparison.NARROWED_WITHOUT_RESIDUAL
 
     def aperture_debts(self) -> tuple[str, ...]:

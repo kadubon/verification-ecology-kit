@@ -80,8 +80,10 @@ class ResidualLedger:
         provenance: tuple[str, ...] = (),
     ) -> LedgerEvent:
         pre = self.state_digest()
+        pre_snapshot = self._snapshot()
         residual.status = LedgerStatus.ACTIVE
         self.residuals[residual.residual_id] = residual
+        post_snapshot = self._snapshot()
         return self._append_event(
             kind="add",
             source_residuals=(),
@@ -90,7 +92,16 @@ class ResidualLedger:
             pre_state_digest=pre,
             actor_authority_ref=actor_authority_ref,
             provenance=provenance,
-            event_payload={"post_residuals": self._snapshot()},
+            event_payload=self._delta_payload(
+                pre_snapshot,
+                post_snapshot,
+                dispositions={residual.residual_id: "active"},
+                preservation_reasons={
+                    residual.residual_id: "ledger_add_preserves_unrouted_residual"
+                }
+                if residual.route is None
+                else {},
+            ),
         )
 
     def merge(
@@ -102,6 +113,7 @@ class ResidualLedger:
         justification: str = "merge residuals",
     ) -> LedgerEvent:
         pre = self.state_digest()
+        pre_snapshot = self._snapshot()
         missing = [residual_id for residual_id in source_ids if residual_id not in self.residuals]
         if missing:
             target.kind = ResidualKind.CONFLICT_RESIDUAL
@@ -113,6 +125,7 @@ class ResidualLedger:
         target.status = LedgerStatus.ACTIVE
         target.update_links += source_ids
         self.residuals[target.residual_id] = target
+        post_snapshot = self._snapshot()
         return self._append_event(
             kind="merge",
             source_residuals=source_ids,
@@ -120,10 +133,24 @@ class ResidualLedger:
             justification=justification,
             pre_state_digest=pre,
             actor_authority_ref=actor_authority_ref,
-            event_payload={
-                "missing_sources": missing,
-                "post_residuals": self._snapshot(),
-            },
+            event_payload=self._delta_payload(
+                pre_snapshot,
+                post_snapshot,
+                missing_sources=missing,
+                dispositions={
+                    **{
+                        residual_id: "merged"
+                        for residual_id in source_ids
+                        if residual_id in pre_snapshot
+                    },
+                    target.residual_id: "active",
+                },
+                preservation_reasons={
+                    target.residual_id: "merge_preserves_or_conflict-residualizes_sources"
+                }
+                if target.route is None
+                else {},
+            ),
         )
 
     def retire(
@@ -135,9 +162,11 @@ class ResidualLedger:
         reinspection_condition: str = "manual_reinspection",
     ) -> LedgerEvent:
         pre = self.state_digest()
+        pre_snapshot = self._snapshot()
         residual = self.residuals[residual_id]
         residual.status = LedgerStatus.RETIRED
         residual.update_links += (reinspection_condition,)
+        post_snapshot = self._snapshot()
         return self._append_event(
             kind="retire",
             source_residuals=(residual_id,),
@@ -145,10 +174,12 @@ class ResidualLedger:
             justification=justification,
             pre_state_digest=pre,
             actor_authority_ref=actor_authority_ref,
-            event_payload={
-                "reinspection_condition": reinspection_condition,
-                "post_residuals": self._snapshot(),
-            },
+            event_payload=self._delta_payload(
+                pre_snapshot,
+                post_snapshot,
+                reinspection_condition=reinspection_condition,
+                dispositions={residual_id: "retired"},
+            ),
         )
 
     def quarantine(
@@ -159,9 +190,11 @@ class ResidualLedger:
         actor_authority_ref: str = "local",
     ) -> LedgerEvent:
         pre = self.state_digest()
+        pre_snapshot = self._snapshot()
         residual = self.residuals[residual_id]
         residual.status = LedgerStatus.QUARANTINED
         residual.update_links += (f"recovery_condition:{reason}",)
+        post_snapshot = self._snapshot()
         return self._append_event(
             kind="quarantine",
             source_residuals=(residual_id,),
@@ -169,7 +202,12 @@ class ResidualLedger:
             justification=reason,
             pre_state_digest=pre,
             actor_authority_ref=actor_authority_ref,
-            event_payload={"recovery_condition": reason, "post_residuals": self._snapshot()},
+            event_payload=self._delta_payload(
+                pre_snapshot,
+                post_snapshot,
+                recovery_condition=reason,
+                dispositions={residual_id: "quarantined"},
+            ),
         )
 
     def redact(
@@ -180,6 +218,7 @@ class ResidualLedger:
         actor_authority_ref: str = "local",
     ) -> tuple[ResidualRecord, LedgerEvent]:
         pre = self.state_digest()
+        pre_snapshot = self._snapshot()
         residual = self.residuals[residual_id]
         residual.status = LedgerStatus.REDACTED
         residual.payload = {}
@@ -193,6 +232,7 @@ class ResidualLedger:
             provenance=residual.provenance,
         )
         self.residuals[redaction.residual_id] = redaction
+        post_snapshot = self._snapshot()
         event = self._append_event(
             kind="redact",
             source_residuals=(residual_id,),
@@ -200,7 +240,18 @@ class ResidualLedger:
             justification=reason,
             pre_state_digest=pre,
             actor_authority_ref=actor_authority_ref,
-            event_payload={"post_residuals": self._snapshot()},
+            event_payload=self._delta_payload(
+                pre_snapshot,
+                post_snapshot,
+                redaction_consequence=redaction.residual_id,
+                dispositions={
+                    residual_id: "redacted",
+                    redaction.residual_id: "redaction_residual_active",
+                },
+                preservation_reasons={
+                    redaction.residual_id: "redaction_residual_preserves_authority_loss"
+                },
+            ),
         )
         return redaction, event
 
@@ -208,6 +259,12 @@ class ResidualLedger:
         replay_state: dict[str, dict[str, Any]] = {}
         previous_event_id: str | None = None
         for event in self.events:
+            if event.clock_model != "total_order" and not self._trace_certificate_ok(event):
+                return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
+            if event.kind != "add" and not event.source_residuals:
+                return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
+            if not event.target_residuals:
+                return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
             expected_pre = self._state_digest_for(replay_state)
             if event.pre_state_digest != expected_pre:
                 return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
@@ -219,7 +276,10 @@ class ResidualLedger:
             for residual_id in event.source_residuals:
                 if residual_id not in replay_state:
                     target = self._event_target_snapshot(event, post_residuals)
-                    if target.get("kind") != ResidualKind.CONFLICT_RESIDUAL.value:
+                    if (
+                        event.kind != "merge"
+                        or target.get("kind") != ResidualKind.CONFLICT_RESIDUAL.value
+                    ):
                         return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
             for residual_id in event.target_residuals:
                 if residual_id not in post_residuals:
@@ -230,7 +290,10 @@ class ResidualLedger:
                 if target in post_residuals
             ):
                 return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
-            if event.kind == "retire" and not event.event_payload.get("reinspection_condition"):
+            if event.kind == "retire" and (
+                not event.justification.strip()
+                or not event.event_payload.get("reinspection_condition")
+            ):
                 return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
             expected_post = self._state_digest_for(post_residuals)
             if event.post_state_digest != expected_post:
@@ -241,6 +304,14 @@ class ResidualLedger:
             previous_event_id = event.event_id
         if self._state_digest_for(self._snapshot()) != self._state_digest_for(replay_state):
             return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
+        for residual_id, residual in replay_state.items():
+            if residual.get("status") != LedgerStatus.ACTIVE.value:
+                continue
+            route = residual.get("route")
+            if route is not None:
+                continue
+            if not self._active_unrouted_preserved(residual_id):
+                return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
         return pass_result("TraceOK")
 
     def to_dict(self) -> dict[str, Any]:
@@ -283,6 +354,26 @@ class ResidualLedger:
     def _snapshot(self) -> dict[str, dict[str, Any]]:
         return {key: self.residuals[key].to_dict() for key in sorted(self.residuals)}
 
+    def _delta_payload(
+        self,
+        pre_snapshot: dict[str, dict[str, Any]],
+        post_snapshot: dict[str, dict[str, Any]],
+        **extra: Any,
+    ) -> dict[str, Any]:
+        changed = {
+            residual_id: post_snapshot[residual_id]
+            for residual_id in post_snapshot
+            if pre_snapshot.get(residual_id) != post_snapshot[residual_id]
+        }
+        removed = sorted(set(pre_snapshot) - set(post_snapshot))
+        payload = {
+            "pre_residuals": pre_snapshot,
+            "post_residuals": post_snapshot,
+            "delta": {"changed": changed, "removed": removed},
+        }
+        payload.update(extra)
+        return payload
+
     def _state_digest_for(self, residuals: dict[str, dict[str, Any]]) -> str:
         state = {
             "residuals": [residuals[key] for key in sorted(residuals)],
@@ -297,3 +388,37 @@ class ResidualLedger:
             return {}
         target = post_residuals.get(event.target_residuals[0])
         return target if isinstance(target, dict) else {}
+
+    def _trace_certificate_ok(self, event: LedgerEvent) -> bool:
+        raw = event.event_payload.get("trace_certificate")
+        if isinstance(raw, TraceCertificate):
+            return raw.is_accepted_witness()
+        if not isinstance(raw, dict):
+            return False
+        certificate = TraceCertificate(
+            trace_certificate_id=str(raw.get("trace_certificate_id", "")),
+            trace_semantics=str(raw.get("trace_semantics", "")),
+            happens_before_relation_ref=str(raw.get("happens_before_relation_ref", "")),
+            dependency_graph_ref=str(raw.get("dependency_graph_ref", "")),
+            representative_linearization_refs=tuple(
+                str(item) for item in raw.get("representative_linearization_refs", ())
+            ),
+            commutation_evidence_refs=tuple(
+                str(item) for item in raw.get("commutation_evidence_refs", ())
+            ),
+            conflict_residual_refs=tuple(
+                str(item) for item in raw.get("conflict_residual_refs", ())
+            ),
+            visible_ledger_equivalence_target=str(raw.get("visible_ledger_equivalence_target", "")),
+            trace_contract_ref=str(raw.get("trace_contract_ref", "")),
+            checker_id=str(raw.get("checker_id", "")),
+            residual_obligations=tuple(str(item) for item in raw.get("residual_obligations", ())),
+        )
+        return certificate.is_accepted_witness()
+
+    def _active_unrouted_preserved(self, residual_id: str) -> bool:
+        for event in reversed(self.events):
+            raw = event.event_payload.get("preservation_reasons")
+            if isinstance(raw, dict) and str(raw.get(residual_id, "")).strip():
+                return True
+        return False

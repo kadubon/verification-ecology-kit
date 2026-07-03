@@ -9,7 +9,7 @@ from verification_ecology_kit.model.packets import VerifierPacket
 from verification_ecology_kit.model.records import OriginKind, ResidualKind
 from verification_ecology_kit.model.residuals import ResidualRecord
 from verification_ecology_kit.ports.generator import PacketGenerator
-from verification_ecology_kit.result import CheckResult
+from verification_ecology_kit.result import CheckOutcome, CheckResult
 
 
 @dataclass
@@ -27,19 +27,43 @@ class DefaultPacketGenerator(PacketGenerator):
 
 
 @dataclass
-class RuntimeStage:
+class RuntimeStageResult:
     stage_name: str
     packet_id: str
     check_result: CheckResult
     notes: list[str] = field(default_factory=list)
+    decision: str = ""
+    evidence_refs: list[str] = field(default_factory=list)
+    residual_refs: list[str] = field(default_factory=list)
+    authority_effect: str = ""
+    report_digest: str = ""
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "stage_name": self.stage_name,
             "packet_id": self.packet_id,
             "check_result": self.check_result.to_dict(),
+            "decision": self.decision or self.check_result.result.value,
+            "evidence_refs": self.evidence_refs or list(self.check_result.evidence_refs),
+            "residual_refs": self.residual_refs or list(self.check_result.residual_refs),
+            "authority_effect": self.authority_effect or self._authority_effect(),
             "notes": self.notes,
+            "report_digest": "",
         }
+        payload["report_digest"] = self.report_digest or DigestPolicy().digest_json(payload).value
+        return payload
+
+    def _authority_effect(self) -> str:
+        if self.check_result.result == CheckOutcome.PASS:
+            return "none"
+        if self.check_result.support_blocking_failures:
+            return "blocks_authority"
+        if self.check_result.result == CheckOutcome.RESIDUALIZE:
+            return "residualize"
+        return "blocks_support"
+
+
+RuntimeStage = RuntimeStageResult
 
 
 @dataclass
@@ -50,7 +74,7 @@ class RuntimeReport:
     inherited_boundary_refs: list[str] = field(default_factory=list)
     anti_overclosure_gaps: list[str] = field(default_factory=list)
     counter_packet_obligations: list[str] = field(default_factory=list)
-    stages: list[RuntimeStage] = field(default_factory=list)
+    stages: list[RuntimeStageResult] = field(default_factory=list)
     quarantine_decisions: list[dict[str, object]] = field(default_factory=list)
     reachability_checks: list[dict[str, object]] = field(default_factory=list)
     schema_checks: list[dict[str, object]] = field(default_factory=list)

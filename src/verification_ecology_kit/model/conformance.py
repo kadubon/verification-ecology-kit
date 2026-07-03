@@ -20,6 +20,7 @@ from verification_ecology_kit.model.records import (
     jsonable,
 )
 from verification_ecology_kit.model.residuals import check_residual_liveness
+from verification_ecology_kit.model.semantics import SemanticCheckReport
 from verification_ecology_kit.model.serde import (
     auth_inputs_from_json,
     judgment_contract_from_json,
@@ -96,15 +97,18 @@ class ConformanceEngine:
         "JudgmentOK",
         "ResidualOK",
         "AuthorityOK",
+        "EcologyOK",
     )
 
     def __init__(self, digest_policy: DigestPolicy | None = None):
         self.digest_policy = digest_policy or DigestPolicy()
+        self._active_profile = ConformanceProfile.CORE
 
     def run(
         self, bundle: VetBundle, profile: ConformanceProfile | None = None
     ) -> ConformanceReport:
         selected = profile or bundle.conformance_profile
+        self._active_profile = selected
         checks: list[CheckResult] = []
         if selected != ConformanceProfile.CORE and not bundle.objects:
             checks.append(
@@ -115,7 +119,7 @@ class ConformanceEngine:
                 )
             )
         for check_name in self.ORDERED_CHECKS:
-            if not self._required_for_profile(check_name, selected):
+            if not self._required_for_profile(check_name, selected, bundle):
                 continue
             checks.append(getattr(self, f"_check_{check_name.lower()}")(bundle))
         checked_digest = self.digest_policy.digest_json(bundle.to_dict()).value
@@ -124,10 +128,20 @@ class ConformanceEngine:
             ordered_check_results=checks,
             checked_input_digest=checked_digest,
         )
+        semantic_report = SemanticCheckReport.from_results(
+            profile=selected,
+            ordered_check_results=checks,
+        )
+        report.semantic_report = semantic_report.to_dict()
         report.report_digest = self.digest_policy.digest_json(report.to_dict()).value
         return report
 
-    def _required_for_profile(self, check_name: str, profile: ConformanceProfile) -> bool:
+    def _required_for_profile(
+        self,
+        check_name: str,
+        profile: ConformanceProfile,
+        bundle: VetBundle,
+    ) -> bool:
         if profile == ConformanceProfile.CORE:
             return check_name in {
                 "SchemaOK",
@@ -138,7 +152,9 @@ class ConformanceEngine:
                 "ResidualOK",
             }
         if profile == ConformanceProfile.OPERATIONAL:
-            return check_name != "AuthorityOK" or True
+            if check_name == "AuthorityOK":
+                return bool(bundle.authority_decisions)
+            return check_name != "EcologyOK"
         return True
 
     def _check_schemaok(self, bundle: VetBundle) -> CheckResult:
@@ -317,6 +333,12 @@ class ConformanceEngine:
         return pass_result("ResidualOK")
 
     def _check_authorityok(self, bundle: VetBundle) -> CheckResult:
+        if self._active_profile == ConformanceProfile.FEDERATED and not bundle.authority_decisions:
+            return fail_result(
+                "AuthorityOK",
+                FailureCode.AUTHORITY_MISMATCH,
+                suggested_repair_hooks=("attach_active_authority_decision",),
+            )
         support_resolver = SupportReferenceResolver(
             bundle_id=bundle.bundle_id,
             envelopes=bundle.objects,
@@ -347,11 +369,59 @@ class ConformanceEngine:
                     except ValueError:
                         return fail_result("AuthorityOK", FailureCode.AUTHORITY_MISMATCH)
                     required_support_items.extend(auth_inputs.support_refs)
+                    candidate_ref = self._support_ref_from_any(bundle, auth_inputs.candidate_ref)
+                    candidate_resolution = support_resolver.resolve_authority_ref(
+                        candidate_ref,
+                        require_object=True,
+                    )
+                    if not candidate_resolution.check_result.passed:
+                        return fail_result(
+                            "AuthorityOK",
+                            FailureCode.AUTHORITY_MISMATCH,
+                            residual_refs=(candidate_ref.object_id,),
+                        )
+                    if (
+                        candidate_resolution.envelope is not None
+                        and auth_inputs.canonical_digest.value
+                        and candidate_resolution.envelope.canonical_digest.value
+                        != auth_inputs.canonical_digest.value
+                    ):
+                        return fail_result(
+                            "AuthorityOK",
+                            FailureCode.DIGEST_MISMATCH,
+                            residual_refs=(candidate_ref.object_id,),
+                        )
                     if auth_inputs.counterexample_refs:
                         return fail_result(
                             "AuthorityOK",
                             FailureCode.AUTHORITY_MISMATCH,
                             residual_refs=auth_inputs.counterexample_refs,
+                        )
+                    if auth_inputs.policy_conflict_refs:
+                        return fail_result(
+                            "AuthorityOK",
+                            FailureCode.AUTHORITY_MISMATCH,
+                            residual_refs=auth_inputs.policy_conflict_refs,
+                        )
+                    missing_auxiliary = tuple(
+                        ref
+                        for ref in (
+                            *auth_inputs.absence_cert_refs,
+                            *auth_inputs.status_view_refs,
+                        )
+                        if self._payload_by_id(bundle, ref) is None
+                    )
+                    if missing_auxiliary:
+                        return fail_result(
+                            "AuthorityOK",
+                            FailureCode.UNRESOLVED_REFERENCE,
+                            residual_refs=missing_auxiliary,
+                        )
+                    if auth_inputs.soundgap_refs:
+                        return fail_result(
+                            "AuthorityOK",
+                            FailureCode.SOUNDGAP_NOT_LIVE,
+                            residual_refs=auth_inputs.soundgap_refs,
                         )
                 elif required_support_items:
                     return fail_result(
@@ -386,6 +456,18 @@ class ConformanceEngine:
                 if decision_record is not None:
                     decision_record.required_support_refs = required_support
                     decision_record.support_judgment_refs = support_judgments
+                    decision_record.residual_gates = tuple(
+                        str(ref) for ref in record.get("residual_gates", ())
+                    )
+                    decision_record.rollback_hooks_required = tuple(
+                        str(ref) for ref in record.get("rollback_hooks_required", ())
+                    )
+                    decision_record.required_human_assessment_roles = tuple(
+                        str(ref) for ref in record.get("required_human_assessment_roles", ())
+                    )
+                    decision_record.required_tool_assessment_roles = tuple(
+                        str(ref) for ref in record.get("required_tool_assessment_roles", ())
+                    )
                 _, aggregate = AuthorityEngine().aggregate(
                     self._authority_action(record),
                     [decision_record] if decision_record else [],
@@ -411,6 +493,28 @@ class ConformanceEngine:
             ]
             return pass_result("AuthorityOK", evidence_refs=tuple(refs))
         return pass_result("AuthorityOK")
+
+    def _check_ecologyok(self, bundle: VetBundle) -> CheckResult:
+        trace = bundle.residual_ledger.trace_ok()
+        if not trace.passed:
+            return fail_result("EcologyOK", *trace.failure_codes)
+        authority_blocking: list[str] = []
+        for residual in bundle.residual_ledger.residuals.values():
+            if (
+                residual.status.value == "active"
+                and residual.route is not None
+                and residual.route.authority_effect == "blocks_authority"
+                and not check_residual_liveness(residual).passed
+            ):
+                authority_blocking.append(residual.residual_id)
+        if authority_blocking:
+            return residual_result(
+                "EcologyOK",
+                FailureCode.RESIDUAL_NOT_LIVE,
+                residual_refs=tuple(authority_blocking),
+                suggested_repair_hooks=("repair_authority_blocking_residual_routes",),
+            )
+        return pass_result("EcologyOK")
 
     def _run_reconstructed_jvalid(
         self,

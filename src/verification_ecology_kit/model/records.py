@@ -49,6 +49,8 @@ class ResidualMetabolismRoute(StrEnum):
     PACKET_RETIREMENT = "packet_retirement"
     COUNTER_PACKET_GENERATION = "counter_packet_generation"
     SCHEMA_REVISION = "schema_revision"
+    REDACTION_REVIEW = "redaction_review"
+    MIGRATION_REVIEW = "migration_review"
     EXPLICIT_PRESERVED_UNKNOWN = "explicit_preserved_unknown"
     QUARANTINE = "quarantine"
 

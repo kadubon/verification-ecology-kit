@@ -192,4 +192,18 @@ class AuthorityEngine:
             refs.append("sandbox_inactive")
         if decision.expiry_state == "expired":
             refs.append("authority_expired")
+        if (
+            decision.action
+            in {
+                AuthorityAction.AUTOMATED_REPAIR,
+                AuthorityAction.DEPLOYMENT,
+                AuthorityAction.SELF_MODIFICATION,
+            }
+            and not decision.rollback_hooks_required
+        ):
+            refs.append("missing_rollback_hook")
+        if decision.required_human_assessment_roles and not decision.linked_certification_records:
+            refs.append("missing_human_assessment_role")
+        if decision.required_tool_assessment_roles and not decision.support_judgment_refs:
+            refs.append("missing_tool_assessment_role")
         return tuple(dict.fromkeys(refs))

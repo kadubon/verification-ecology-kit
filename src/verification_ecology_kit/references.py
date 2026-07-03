@@ -454,6 +454,30 @@ class SupportReferenceResolver:
             check_result=result,
         )
 
+    def resolve_support_ref(
+        self,
+        ref: ObjectRef,
+        *,
+        require_object: bool = False,
+    ) -> SupportResolution:
+        return self.resolve_support(
+            ref,
+            require_object=require_object,
+            check_name="SupportRefOK",
+        )
+
+    def resolve_authority_ref(
+        self,
+        ref: ObjectRef,
+        *,
+        require_object: bool = False,
+    ) -> SupportResolution:
+        return self.resolve_support(
+            ref,
+            require_object=require_object,
+            check_name="AuthorityRefOK",
+        )
+
 
 def _status_from_payload(value: object) -> LifecycleStatus | None:
     if not isinstance(value, dict):
@@ -504,3 +528,21 @@ def _status_fold_from_payload(
         except ValueError:
             return StatusFold().fold(object_id, [])
     return StatusFold().fold(object_id, events)
+
+
+def resolve_support_ref(
+    resolver: SupportReferenceResolver,
+    ref: ObjectRef,
+    *,
+    require_object: bool = False,
+) -> SupportResolution:
+    return resolver.resolve_support_ref(ref, require_object=require_object)
+
+
+def resolve_authority_ref(
+    resolver: SupportReferenceResolver,
+    ref: ObjectRef,
+    *,
+    require_object: bool = False,
+) -> SupportResolution:
+    return resolver.resolve_authority_ref(ref, require_object=require_object)

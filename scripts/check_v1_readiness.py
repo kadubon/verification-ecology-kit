@@ -131,16 +131,28 @@ def main(argv: list[str] | None = None) -> int:
     gaps = [gate for gate in gates if not gate.passed]
     claims_v1 = _claims_v1(version)
     fail_release = bool(gaps) and (claims_v1 or args.strict)
+    stable_claim = claims_v1 and not gaps
+    residual_obligations = [f"{gate.name}: {gate.detail}" for gate in gaps]
 
     report = {
         "version": version,
+        "stable_claim": stable_claim,
+        "complete_operational_semantics_claim": False,
         "claims_v1_or_later": claims_v1,
         "ready_for_v1_0_0": not gaps,
         "ready_for_v1_1_0": not gaps,
         "strict": args.strict,
         "decision": "pass" if not fail_release else "fail",
+        "passed_gates": [gate.to_dict() for gate in gates if gate.passed],
+        "failed_gates": [gate.to_dict() for gate in gaps],
         "gates": [gate.to_dict() for gate in gates],
         "gaps": [gate.to_dict() for gate in gaps],
+        "residual_obligations": residual_obligations,
+        "recommendation": (
+            "stable operational release can be published without formal-semantics claim"
+            if not fail_release
+            else "resolve failed gates before publishing a stable release"
+        ),
     }
     print(json.dumps(report, indent=2, sort_keys=True))
     return 1 if fail_release else 0
@@ -628,8 +640,9 @@ def _gate_v1_audit_semantic_statuses(v1_audit: str) -> Gate:
     allowed_statuses = (
         "implemented",
         "schema-backed",
-        "operational-check",
+        "executable-check",
         "partial-semantic",
+        "not-yet-complete",
         "documented-interface",
         "residualized",
     )

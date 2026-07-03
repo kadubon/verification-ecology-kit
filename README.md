@@ -1,8 +1,6 @@
 # verification-ecology-kit
 
-`verification-ecology-kit` is a stable operational toolkit for VET-style
-records, schemas, residual ledgers, conformance reports, packet operations, and
-audits.
+verification-ecology-kit is a stable operational toolkit for VET-style records, schemas, residual ledgers, conformance reports, packet operations, and audits. It is not a theorem prover and does not claim to be a complete formal semantics of Verifier Ecology Theory.
 
 It is built for a simple problem: verification work often produces more than
 one word of output. A result can pass, fail, need more evidence, depend on a

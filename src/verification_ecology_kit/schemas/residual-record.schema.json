@@ -32,12 +32,15 @@
             "packet_retirement",
             "counter_packet_generation",
             "schema_revision",
+            "redaction_review",
+            "migration_review",
             "explicit_preserved_unknown",
             "quarantine"
           ]
         },
         "authority_effect": { "type": "string" },
-        "active_follow_through": { "type": "boolean" }
+        "active_follow_through": { "type": "boolean" },
+        "preservation_reason": { "type": "string" }
       },
       "required": [
         "owner",
@@ -46,7 +49,8 @@
         "recheck_trigger",
         "route_type",
         "authority_effect",
-        "active_follow_through"
+        "active_follow_through",
+        "preservation_reason"
       ],
       "additionalProperties": false
     },

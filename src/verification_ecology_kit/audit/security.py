@@ -21,12 +21,17 @@ TOKEN_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
             "(" + "|".join(re.escape(prefix) for prefix in TOKEN_PREFIXES) + r")[A-Za-z0-9_\-]{12,}"
         ),
     ),
+    ("openai_project_key", re.compile(r"(sk-proj-[A-Za-z0-9_\-]{20,})")),
+    ("openai_service_key", re.compile(r"(sk-svcacct-[A-Za-z0-9_\-]{20,})")),
     ("github_pat", re.compile(r"(github" + r"_pat_)[A-Za-z0-9_]{22,}")),
     ("github_token", re.compile(r"(gh" + r"[usro]_[A-Za-z0-9_]{16,})")),
     ("npm_token", re.compile(r"(npm" + r"_[A-Za-z0-9_\-]{20,})")),
+    ("pypi_token", re.compile(r"(pypi-[A-Za-z0-9_\-]{20,})")),
     ("slack_token", re.compile(r"(xox" + r"[abprs]-[A-Za-z0-9\-]{20,})")),
     ("google_api_key", re.compile(r"(AI" + r"za[0-9A-Za-z_\-]{20,})")),
+    ("google_oauth_token", re.compile(r"(ya29\.[0-9A-Za-z_\-]{20,})")),
     ("cloud_credential", re.compile(r"((?:AK" + r"IA|ASIA)[A-Z0-9]{16})")),
+    ("aws_secret_access_key", re.compile(r"(?i)(aws_secret_access_key\s*=\s*)[A-Za-z0-9/+=]{40}")),
     (
         "jwt",
         re.compile(r"eyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}"),
@@ -38,6 +43,12 @@ TOKEN_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "azure_key",
         re.compile(r"([A-Za-z0-9/+]{43}=)"),
+    ),
+    (
+        "azure_connection_string",
+        re.compile(
+            r"(DefaultEndpointsProtocol=https;AccountName=[^;]+;AccountKey=[A-Za-z0-9/+]{20,}=*)"
+        ),
     ),
 )
 HIGH_ENTROPY_PATTERN = re.compile(r"\b[A-Za-z0-9_\-+/]{32,}\b")

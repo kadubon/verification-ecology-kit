@@ -178,6 +178,7 @@ class ConformanceReport:
     provenance: list[str] = field(default_factory=list)
     checked_input_digest: str | None = None
     report_digest: str | None = None
+    semantic_report: dict[str, object] | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -192,6 +193,7 @@ class ConformanceReport:
             "provenance": self.provenance,
             "checked_input_digest": self.checked_input_digest,
             "report_digest": self.report_digest,
+            "semantic_report": self.semantic_report,
         }
 
     @classmethod

@@ -6,8 +6,14 @@ from typing import Any
 
 from verification_ecology_kit.digest import Digest
 from verification_ecology_kit.ids import new_id
-from verification_ecology_kit.model.authority import AuthInputs
-from verification_ecology_kit.model.contracts import JudgmentContract
+from verification_ecology_kit.model.aperture import Aperture, CapacityRecord
+from verification_ecology_kit.model.authority import AuthInputs, AuthorityDecision
+from verification_ecology_kit.model.contracts import (
+    CarrierContract,
+    CheckerContract,
+    ContractRegistry,
+    JudgmentContract,
+)
 from verification_ecology_kit.model.ecology_state import VerifierEcologyState
 from verification_ecology_kit.model.history import HistoryEvent, ObservableProcessHistory
 from verification_ecology_kit.model.judgments import JudgmentRecord, UseContext
@@ -33,6 +39,8 @@ from verification_ecology_kit.model.reachability import (
 )
 from verification_ecology_kit.model.records import (
     AuthorityAction,
+    AuthorityDecisionValue,
+    ConformanceProfile,
     LedgerStatus,
     LifecycleStatus,
     OriginKind,
@@ -42,7 +50,7 @@ from verification_ecology_kit.model.records import (
     Visibility,
 )
 from verification_ecology_kit.model.residuals import ResidualRecord, ResidualRoute, SoundGapResidual
-from verification_ecology_kit.references import ObjectRef
+from verification_ecology_kit.references import ObjectEnvelope, ObjectRef, SchemaCatalogue
 
 
 def as_dict(value: Any, *, name: str) -> dict[str, Any]:
@@ -433,6 +441,7 @@ def residual_route_from_json(data: Any) -> ResidualRoute | None:
         ),
         authority_effect=str(data.get("authority_effect", "informational")),
         active_follow_through=bool(data.get("active_follow_through", True)),
+        preservation_reason=str(data.get("preservation_reason", "")),
     )
 
 
@@ -630,3 +639,288 @@ def ecology_state_from_json(data: Any) -> VerifierEcologyState:
     if isinstance(capital, dict):
         state.reusable_intelligence_capital = capital
     return state
+
+
+def object_envelope_from_json(value: Any, *, bundle_id: str = "") -> ObjectEnvelope:
+    if isinstance(value, ObjectEnvelope):
+        return value
+    data = as_dict(value, name="object envelope")
+    return ObjectEnvelope(
+        object_id=str(data.get("object_id", "")),
+        schema_id=str(data.get("schema_id", "")),
+        schema_version=str(data.get("schema_version", "")),
+        payload=dict_value(data.get("payload"), name="payload"),
+        canonical_digest=digest_from_json(data.get("canonical_digest")),
+        status_ref=object_ref_from_json(data.get("status_ref"), bundle_id=bundle_id)
+        if data.get("status_ref") is not None
+        else None,
+        provenance=string_list(data.get("provenance")),
+        residual_refs=[
+            object_ref_from_json(item, bundle_id=bundle_id)
+            for item in data.get("residual_refs", [])
+        ],
+    )
+
+
+def schema_catalogue_from_json(
+    value: Any, *, objects: list[ObjectEnvelope] | None = None
+) -> SchemaCatalogue:
+    data = as_dict(value or {}, name="schema catalogue")
+    accepted_raw = data.get("accepted_schema_versions", {})
+    accepted: dict[str, tuple[str, ...]] = {}
+    if isinstance(accepted_raw, dict):
+        for schema_id, versions in accepted_raw.items():
+            accepted[str(schema_id)] = string_tuple(versions)
+    if not accepted and objects:
+        accepted = {
+            schema_id: tuple(
+                sorted({obj.schema_version for obj in objects if obj.schema_id == schema_id})
+            )
+            for schema_id in {obj.schema_id for obj in objects}
+        }
+    if not accepted:
+        accepted = {"verifier-packet": ("1.0",), "object-envelope": ("1.0",)}
+    schemas_raw = data.get("schemas", {})
+    schemas: dict[str, dict[str, Any]] = {}
+    if isinstance(schemas_raw, dict):
+        for schema_id, schema in schemas_raw.items():
+            if isinstance(schema, dict):
+                schemas[str(schema_id)] = schema
+    migrations: dict[tuple[str, str], str] = {}
+    raw_migrations = data.get("migration_witnesses", {})
+    if isinstance(raw_migrations, dict):
+        for key, witness in raw_migrations.items():
+            parts = str(key).split("->", 1)
+            if len(parts) == 2:
+                migrations[(parts[0], parts[1])] = str(witness)
+    return SchemaCatalogue(
+        catalogue_id=str(data.get("catalogue_id", "serde")),
+        accepted_schema_versions=accepted,
+        schemas=schemas,
+        migration_witnesses=migrations,
+    )
+
+
+def authority_decision_from_json(value: Any) -> AuthorityDecision:
+    if isinstance(value, AuthorityDecision):
+        return value
+    data = as_dict(value, name="authority decision")
+    support_statuses_raw = data.get("support_statuses")
+    support_statuses: dict[str, LifecycleStatus] | None = None
+    if isinstance(support_statuses_raw, dict):
+        support_statuses = {
+            str(ref): LifecycleStatus(str(status)) for ref, status in support_statuses_raw.items()
+        }
+    return AuthorityDecision(
+        authority_decision_id=str(data.get("authority_decision_id", "")),
+        object_id=str(data.get("object_id", "")),
+        schema_version=str(data.get("schema_version", "")),
+        canonical_digest=digest_from_json(data.get("canonical_digest")),
+        lifecycle_status=LifecycleStatus(str(data.get("lifecycle_status", LifecycleStatus.ACTIVE))),
+        policy_id=str(data.get("policy_id", "")),
+        action=AuthorityAction(str(data.get("action", AuthorityAction.LOCAL_USE))),
+        decision=AuthorityDecisionValue(str(data.get("decision", AuthorityDecisionValue.DENY))),
+        deny_by_default=bool(data.get("deny_by_default", True)),
+        linked_certification_records=string_tuple(data.get("linked_certification_records")),
+        auth_inputs_ref=str(data.get("auth_inputs_ref", "")),
+        required_certification_components=string_tuple(
+            data.get("required_certification_components")
+        ),
+        required_support_refs=string_tuple(data.get("required_support_refs")),
+        support_judgment_refs=string_tuple(data.get("support_judgment_refs")),
+        aggregate_judgment_ref=str(data.get("aggregate_judgment_ref", "")),
+        cex_closed_judgment_refs=string_tuple(data.get("cex_closed_judgment_refs")),
+        soundgap_refs=string_tuple(data.get("soundgap_refs")),
+        scope_action_match=str(data.get("scope_action_match", "not_checked")),
+        required_human_assessment_roles=string_tuple(data.get("required_human_assessment_roles")),
+        required_tool_assessment_roles=string_tuple(data.get("required_tool_assessment_roles")),
+        rollback_hooks_required=string_tuple(data.get("rollback_hooks_required")),
+        expiry=str(data.get("expiry", "")),
+        revocation_hooks=string_tuple(data.get("revocation_hooks")),
+        tightening_conditions=string_tuple(data.get("tightening_conditions")),
+        delegation_basis=string_tuple(data.get("delegation_basis")),
+        migration_witness_ref=str(data.get("migration_witness_ref", "")),
+        sandbox_required=bool(data.get("sandbox_required", False)),
+        sandbox_status=str(data.get("sandbox_status", "not_applicable")),
+        sandbox_waiver_residuals=string_tuple(data.get("sandbox_waiver_residuals")),
+        residual_gates=string_tuple(data.get("residual_gates")),
+        support_statuses=support_statuses,
+        migrated_without_witness_refs=string_tuple(data.get("migrated_without_witness_refs")),
+        digest_mismatched_support_refs=string_tuple(data.get("digest_mismatched_support_refs")),
+        unresolved_support_refs=string_tuple(data.get("unresolved_support_refs")),
+        counterexample_challenged_refs=string_tuple(data.get("counterexample_challenged_refs")),
+        expired_cex_closed_refs=string_tuple(data.get("expired_cex_closed_refs")),
+        non_live_soundgap_refs=string_tuple(data.get("non_live_soundgap_refs")),
+        expiry_state=str(data.get("expiry_state", "not_expired")),
+        ledger_event_refs=string_tuple(data.get("ledger_event_refs")),
+        provenance=string_tuple(data.get("provenance")),
+    )
+
+
+def carrier_contract_from_json(value: Any) -> CarrierContract:
+    data = as_dict(value, name="carrier contract")
+    return CarrierContract(
+        contract_id=str(data.get("contract_id", "")),
+        kind=str(data.get("kind", "")),
+        domain=str(data.get("domain", "")),
+        codomain=str(data.get("codomain", "")),
+        accepted_versions=string_tuple(data.get("accepted_versions")),
+        invalidation_conditions=string_tuple(data.get("invalidation_conditions")),
+        migration_witness_required=bool(data.get("migration_witness_required", True)),
+    )
+
+
+def checker_contract_from_json(value: Any) -> CheckerContract:
+    data = as_dict(value, name="checker contract")
+    return CheckerContract(
+        contract_id=str(data.get("contract_id", "")),
+        checker_type=str(data.get("checker_type", "")),
+        accepted_versions=string_tuple(data.get("accepted_versions")),
+        accepted_statuses=tuple(
+            LifecycleStatus(str(item))
+            for item in data.get("accepted_statuses", (LifecycleStatus.ACTIVE.value,))
+        ),
+        sandbox_required=bool(data.get("sandbox_required", False)),
+        invalidation_conditions=string_tuple(data.get("invalidation_conditions")),
+        recheck_trigger=str(data.get("recheck_trigger", "")),
+    )
+
+
+def contract_registry_from_json(value: Any) -> ContractRegistry:
+    data = as_dict(value or {}, name="contract registry")
+    registry = ContractRegistry()
+    carriers = data.get("carrier_contracts", {})
+    if isinstance(carriers, dict):
+        carrier_items: list[Any] = list(carriers.values())
+    else:
+        carrier_items = list(carriers) if isinstance(carriers, list | tuple) else []
+    for item in carrier_items:
+        carrier_contract = carrier_contract_from_json(item)
+        registry.carrier_contracts[carrier_contract.contract_id] = carrier_contract
+    checkers = data.get("checker_contracts", {})
+    if isinstance(checkers, dict):
+        checker_items: list[Any] = list(checkers.values())
+    else:
+        checker_items = list(checkers) if isinstance(checkers, list | tuple) else []
+    for item in checker_items:
+        checker_contract = checker_contract_from_json(item)
+        registry.checker_contracts[checker_contract.contract_id] = checker_contract
+    judgments = data.get("judgment_contracts", {})
+    if isinstance(judgments, dict):
+        judgment_items: list[Any] = list(judgments.values())
+    else:
+        judgment_items = list(judgments) if isinstance(judgments, list | tuple) else []
+    for item in judgment_items:
+        registry.add_judgment_contract(judgment_contract_from_json(item))
+    return registry
+
+
+def bundle_from_json(value: Any) -> Any:
+    from verification_ecology_kit.model.conformance import VetBundle
+
+    data = as_dict(value, name="bundle JSON")
+    bundle_id = str(data.get("bundle_id", "serde-bundle"))
+    objects = [
+        object_envelope_from_json(item, bundle_id=bundle_id) for item in data.get("objects", [])
+    ]
+    catalogue = schema_catalogue_from_json(data.get("schema_catalogue", {}), objects=objects)
+    return VetBundle(
+        bundle_id=bundle_id,
+        schema_version=str(data.get("schema_version", "1.0")),
+        conformance_profile=ConformanceProfile(str(data.get("conformance_profile", "core"))),
+        schema_catalogue=catalogue,
+        objects=objects,
+        references=[
+            object_ref_from_json(item, bundle_id=bundle_id) for item in data.get("references", [])
+        ],
+        residual_ledger=ledger_from_json(data.get("residual_ledger", {})),
+        authority_decisions=list(data.get("authority_decisions", [])),
+        judgment_records=list(data.get("judgment_records", [])),
+        provenance=string_list(data.get("provenance")),
+    )
+
+
+def packets_from_audit_input(data: Any) -> list[VerifierPacket]:
+    if isinstance(data, list):
+        packets = [packet_from_json(item) for item in data]
+    elif isinstance(data, dict) and isinstance(data.get("packets"), list):
+        packets = [packet_from_json(item) for item in data["packets"]]
+    elif isinstance(data, dict) and isinstance(data.get("packet_population"), dict):
+        packets = [packet_from_json(item) for item in data["packet_population"].values()]
+    elif isinstance(data, dict) and isinstance(data.get("objects"), list):
+        packets = [
+            packet_from_json(as_dict(item, name="object").get("payload", {}))
+            for item in data["objects"]
+        ]
+    elif isinstance(data, dict):
+        packets = [packet_from_json(data)]
+    else:
+        raise ValueError("audit input must be a packet, bundle, state, or list of packets")
+    if not packets:
+        raise ValueError("audit input did not contain any packets")
+    return packets
+
+
+def audit_state_from_json(data: Any) -> VerifierEcologyState:
+    if isinstance(data, dict) and (
+        "packet_population" in data or "history" in data or "reusable_intelligence_capital" in data
+    ):
+        return ecology_state_from_json(data)
+    state = VerifierEcologyState()
+    for packet in packets_from_audit_input(data):
+        state.add_packet(packet)
+    if isinstance(data, dict) and "residual_ledger" in data:
+        state.residual_ledger = ledger_from_json(data["residual_ledger"])
+    elif isinstance(data, dict) and ("residuals" in data or "events" in data):
+        state.residual_ledger = ledger_from_json(data)
+    return state
+
+
+def aperture_from_json(data: Any) -> Aperture:
+    data = as_dict(data or {}, name="aperture")
+
+    def cap(name: str) -> CapacityRecord:
+        item = data.get(name, {})
+        item = item if isinstance(item, dict) else {}
+        return CapacityRecord(
+            name=name,
+            represented_capability=string_tuple(item.get("represented_capability")),
+            nominal_capacity=int(item.get("nominal_capacity", 0)),
+            feasible_capacity=int(item.get("feasible_capacity", 0)),
+            exercised_capacity=int(item.get("exercised_capacity", 0)),
+            resource_bounds=string_tuple(item.get("resource_bounds")),
+            cost_bounds=string_tuple(item.get("cost_bounds")),
+            latency_bounds=string_tuple(item.get("latency_bounds")),
+            residual_obligations=string_tuple(item.get("residual_obligations")),
+            inert_residual_obligations=string_tuple(item.get("inert_residual_obligations")),
+        )
+
+    return Aperture(
+        question_form_capacity=cap("question_form_capacity"),
+        residual_type_capacity=cap("residual_type_capacity"),
+        translation_channel_capacity=cap("translation_channel_capacity"),
+        counter_packet_capacity=cap("counter_packet_capacity"),
+        schema_revision_capacity=cap("schema_revision_capacity"),
+        self_verification_capacity=cap("self_verification_capacity"),
+    )
+
+
+load_digest = digest_from_json
+load_object_ref = object_ref_from_json
+load_object_envelope = object_envelope_from_json
+load_schema_catalogue = schema_catalogue_from_json
+load_judgment_contract = judgment_contract_from_json
+load_contract_registry = contract_registry_from_json
+load_use_context = use_context_from_json
+load_judgment_record = judgment_record_from_json
+load_auth_inputs = auth_inputs_from_json
+load_authority_decision = authority_decision_from_json
+load_packet = packet_from_json
+load_residual_route = residual_route_from_json
+load_residual = residual_from_json
+load_ledger_event = ledger_event_from_json
+load_ledger = ledger_from_json
+load_ecology_state = ecology_state_from_json
+load_audit_state = audit_state_from_json
+load_vet_bundle = bundle_from_json
+load_aperture = aperture_from_json

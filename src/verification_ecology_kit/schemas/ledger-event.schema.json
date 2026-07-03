@@ -23,9 +23,18 @@
           "type": "object",
           "additionalProperties": { "$ref": "residual-record.schema.json" }
         },
+        "pre_residuals": {
+          "type": "object",
+          "additionalProperties": { "$ref": "residual-record.schema.json" }
+        },
+        "delta": { "type": "object" },
+        "dispositions": { "type": "object" },
+        "preservation_reasons": { "type": "object" },
         "missing_sources": { "type": "array", "items": { "type": "string" } },
         "reinspection_condition": { "type": "string" },
-        "recovery_condition": { "type": "string" }
+        "recovery_condition": { "type": "string" },
+        "redaction_consequence": { "type": "string" },
+        "trace_certificate": { "type": "object" }
       },
       "additionalProperties": true
     }

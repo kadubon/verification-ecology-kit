@@ -25,6 +25,7 @@ class ResidualRoute:
     route_type: ResidualMetabolismRoute = ResidualMetabolismRoute.EXPLICIT_PRESERVED_UNKNOWN
     authority_effect: str = "informational"
     active_follow_through: bool = True
+    preservation_reason: str = ""
 
     def is_live(self, *, now: datetime | None = None) -> bool:
         if not isinstance(self.route_type, ResidualMetabolismRoute):

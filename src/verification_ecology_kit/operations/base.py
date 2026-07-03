@@ -58,6 +58,7 @@ class OperationReport:
     ecological_invariants: CheckResult = field(
         default_factory=lambda: pass_result("EcologicalInvariants")
     )
+    ecological_invariant_check: EcologicalInvariantCheck | None = None
     schema_overclosure_risk: CheckResult = field(
         default_factory=lambda: pass_result("SchemaOverclosureRisk")
     )
@@ -70,6 +71,41 @@ class OperationReport:
 
     def to_dict(self) -> dict[str, Any]:
         return jsonable(self)
+
+
+@dataclass(frozen=True)
+class EcologicalInvariantCheck:
+    origin_traceability: bool
+    scope_accountability: bool
+    residual_preservation: bool
+    boundary_preservation: bool
+    counter_packet_availability: bool
+    retirement_liveness: bool
+    aperture_accounting: bool
+    schema_revisability: bool
+    local_sovereignty: bool
+    authority_containment: bool
+    residual_refs: tuple[str, ...] = ()
+    failures: tuple[str, ...] = ()
+
+    def passed(self) -> bool:
+        return not self.failures
+
+    def to_check_result(self) -> CheckResult:
+        if self.passed():
+            return pass_result("EcologicalInvariants")
+        if self.residual_refs:
+            return residual_result(
+                "EcologicalInvariants",
+                FailureCode.MIGRATION_LOSS,
+                residual_refs=self.residual_refs,
+                suggested_repair_hooks=("preserve_or_residualize_ecological_invariant_loss",),
+            )
+        return fail_result(
+            "EcologicalInvariants",
+            FailureCode.MIGRATION_LOSS,
+            suggested_repair_hooks=("preserve_core_residuals_boundaries_and_lineage",),
+        )
 
 
 @dataclass
@@ -215,6 +251,10 @@ class PacketOperationEngine:
             boundary_checked=boundary_checked,
             residuals_handled=residuals_handled,
             local_counter_packet_hook=bool(child.counter_packet_refs),
+            local_scope_profiled=child.scope is not None,
+            authority_not_blocked=not any(
+                residual.exposure == "blocks_authority" for residual in child.residual_obligations
+            ),
         )
         if not result.internalized:
             residuals = [
@@ -276,18 +316,33 @@ class PacketOperationEngine:
         boundary_checked: bool = True,
     ) -> OperationReport:
         residuals = extra_residuals or []
+        existing_residual_ids = {residual.residual_id for residual in residuals}
+        for residual in output.ensure_core_accountability():
+            if residual.residual_id not in existing_residual_ids:
+                residuals.append(residual)
+                existing_residual_ids.add(residual.residual_id)
+        for residual in output.ensure_semantic_accountability():
+            if residual.residual_id not in existing_residual_ids:
+                residuals.append(residual)
+                existing_residual_ids.add(residual.residual_id)
         event_refs: list[str] = []
         for residual in residuals:
             event = self.ledger.add(residual, justification=reason)
             event_refs.append(event.event_id)
         core = self._check_core_monotonicity(inputs, output)
+        missing_core = output.missing_core_fields()
         residual_totality = (
-            pass_result("ResidualTotality")
-            if residuals or not output.missing_core_fields()
-            else residual_result(
+            residual_result(
                 "ResidualTotality",
                 FailureCode.MISSING_REQUIRED_CORE,
+                residual_refs=tuple(
+                    residual.residual_id
+                    for residual in output.residual_obligations
+                    if residual.kind == ResidualKind.MISSING
+                ),
             )
+            if missing_core
+            else pass_result("ResidualTotality")
         )
         boundary = (
             pass_result("BoundarySafety")
@@ -300,9 +355,10 @@ class PacketOperationEngine:
         )
         lineage = self._check_lineage_laundering(inputs, output)
         schema_risk = self._check_schema_overclosure_risk(output)
-        ecological = self._check_ecological_invariants(
+        ecological_invariant_check = self._build_ecological_invariant_check(
             inputs, output, boundary_checked=boundary_checked
         )
+        ecological = ecological_invariant_check.to_check_result()
         admissibility = self._check_operation_admissibility(
             core=core,
             residual_totality=residual_totality,
@@ -320,6 +376,7 @@ class PacketOperationEngine:
             residual_totality=residual_totality,
             boundary_safety=boundary,
             ecological_invariants=ecological,
+            ecological_invariant_check=ecological_invariant_check,
             schema_overclosure_risk=schema_risk,
             lineage_laundering=lineage,
             ledger_event_refs=tuple(event_refs),
@@ -398,17 +455,30 @@ class PacketOperationEngine:
             )
         return pass_result("SchemaOverclosureRisk")
 
-    def _check_ecological_invariants(
+    def _build_ecological_invariant_check(
         self,
         inputs: tuple[VerifierPacket, ...],
         output: VerifierPacket,
         *,
         boundary_checked: bool,
-    ) -> CheckResult:
+    ) -> EcologicalInvariantCheck:
         findings: list[str] = []
         residual_refs: list[str] = []
+        booleans = {
+            "origin_traceability": True,
+            "scope_accountability": True,
+            "residual_preservation": True,
+            "boundary_preservation": True,
+            "counter_packet_availability": True,
+            "retirement_liveness": True,
+            "aperture_accounting": True,
+            "schema_revisability": True,
+            "local_sovereignty": True,
+            "authority_containment": True,
+        }
         if output.origin is None:
             findings.append("missing_origin")
+            booleans["origin_traceability"] = False
         else:
             preserved_parent_ids = set(output.origin.lineage) | set(output.origin.parent_packets)
             for packet in inputs:
@@ -418,6 +488,11 @@ class PacketOperationEngine:
                     and packet.packet_id not in preserved_parent_ids
                 ):
                     findings.append(f"origin:{packet.packet_id}")
+                    booleans["origin_traceability"] = False
+
+        if output.scope is None or output.scope.unvalidated_assumptions:
+            findings.append("scope_accountability")
+            booleans["scope_accountability"] = False
 
         output_residual_ids = {residual.residual_id for residual in output.residual_obligations}
         inherited_residual_ids = set(output.origin.inherited_residuals) if output.origin else set()
@@ -434,6 +509,7 @@ class PacketOperationEngine:
                 ):
                     findings.append(f"residual:{residual.residual_id}")
                     residual_refs.append(residual.residual_id)
+                    booleans["residual_preservation"] = False
 
         output_boundaries = self._boundary_ref_set(output)
         inherited_boundaries = (
@@ -450,6 +526,7 @@ class PacketOperationEngine:
             missing = self._boundary_ref_set(packet) - output_boundaries - inherited_boundaries
             if missing and boundary_checked and not boundary_loss_residualized:
                 findings.append(f"boundary:{','.join(sorted(missing))}")
+                booleans["boundary_preservation"] = False
 
         output_counter_refs = set(output.counter_packet_refs)
         counter_loss_residualized = any(
@@ -462,18 +539,75 @@ class PacketOperationEngine:
             missing = set(packet.counter_packet_refs) - output_counter_refs
             if missing and not counter_loss_residualized:
                 findings.append(f"counter:{','.join(sorted(missing))}")
+                booleans["counter_packet_availability"] = False
 
         if output.residual_obligations and output.residual_hooks is None:
             findings.append("residual_hooks")
-
-        if findings:
-            return residual_result(
-                "EcologicalInvariants",
-                FailureCode.MIGRATION_LOSS,
-                residual_refs=tuple(residual_refs),
-                suggested_repair_hooks=("preserve_or_residualize_ecological_invariant_loss",),
+            booleans["residual_preservation"] = False
+        if (
+            output.update_profile is None or not output.update_profile.retirement_conditions
+        ) and not any(
+            residual.kind == ResidualKind.LIVENESS_DEBT for residual in output.residual_obligations
+        ):
+            findings.append("retirement_liveness")
+            booleans["retirement_liveness"] = False
+        if output.ecological_invariants.preserve_aperture and (
+            not output.anti_overclosure.unknowns_to_preserve
+            and not any(
+                residual.kind in {ResidualKind.APERTURE_DEBT, ResidualKind.SCHEMA_OVERCLOSURE}
+                for residual in output.residual_obligations
             )
-        return pass_result("EcologicalInvariants")
+        ):
+            findings.append("aperture_accounting")
+            booleans["aperture_accounting"] = False
+        if (
+            not output.anti_overclosure.future_candidates_may_narrow
+            and not output.anti_overclosure.schema_overclosure_residuals
+            and output.extension.get("schema_overclosure_exposure") == "unresolved"
+        ):
+            findings.append("schema_revisability")
+            booleans["schema_revisability"] = False
+        if (
+            output.circulation_status
+            and output.circulation_status.trust_status.value != "local"
+            and not output.circulation_status.translation_residual_refs
+        ):
+            findings.append("local_sovereignty")
+            booleans["local_sovereignty"] = False
+        if any(
+            residual.exposure == "blocks_authority" and residual.route is None
+            for residual in output.residual_obligations
+        ):
+            findings.append("authority_containment")
+            booleans["authority_containment"] = False
+
+        return EcologicalInvariantCheck(
+            origin_traceability=booleans["origin_traceability"],
+            scope_accountability=booleans["scope_accountability"],
+            residual_preservation=booleans["residual_preservation"],
+            boundary_preservation=booleans["boundary_preservation"],
+            counter_packet_availability=booleans["counter_packet_availability"],
+            retirement_liveness=booleans["retirement_liveness"],
+            aperture_accounting=booleans["aperture_accounting"],
+            schema_revisability=booleans["schema_revisability"],
+            local_sovereignty=booleans["local_sovereignty"],
+            authority_containment=booleans["authority_containment"],
+            residual_refs=tuple(dict.fromkeys(residual_refs)),
+            failures=tuple(dict.fromkeys(findings)),
+        )
+
+    def _check_ecological_invariants(
+        self,
+        inputs: tuple[VerifierPacket, ...],
+        output: VerifierPacket,
+        *,
+        boundary_checked: bool,
+    ) -> CheckResult:
+        return self._build_ecological_invariant_check(
+            inputs,
+            output,
+            boundary_checked=boundary_checked,
+        ).to_check_result()
 
     def _preserve_parent_context(
         self,
