@@ -1,0 +1,6 @@
+{
+  "trace_id": "golden-fork-lineage",
+  "formal_semantics_version": "vet-core-1.2.0",
+  "operation": "fork",
+  "expected": ["lineage_preserved", "residuals_accounted"]
+}

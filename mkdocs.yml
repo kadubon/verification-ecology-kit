@@ -4,6 +4,9 @@ nav:
   - Quickstart: quickstart.md
   - Concepts: concepts.md
   - Theory Mapping: theory_mapping.md
+  - Formal Semantics: formal_semantics.md
+  - Formal Claims: formal_claims.md
+  - Semantic Boundary: semantic_boundary.md
   - Data Model: data_model.md
   - Schemas: schemas.md
   - Conformance: conformance.md

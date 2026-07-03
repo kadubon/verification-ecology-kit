@@ -1,0 +1,6 @@
+{
+  "trace_id": "golden-retire-reinspection",
+  "formal_semantics_version": "vet-core-1.2.0",
+  "operation": "retire",
+  "expected": ["retirement_reason", "reinspection_condition"]
+}

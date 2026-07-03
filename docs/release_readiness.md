@@ -1,16 +1,16 @@
 # Release Readiness
 
 This page records the release-readiness contract for `verification-ecology-kit`
-`1.1.0`.
+`1.2.0`.
 
 ## Current Decision
 
-`ready_for_v1.1.0: true` for local release artifacts when all commands in the
+`ready_for_v1.2.0: true` for local release artifacts when all commands in the
 gate below pass on the current worktree.
 
-The release decision is operational, not theorem-level. The package implements
-schema-backed records, deterministic checks, audits, and residual reports. It
-does not claim that the software proves the paper's mathematical claims.
+The release decision supports the bounded formal claim for VET-Core. It does
+not claim that the software proves every mathematical statement in the paper,
+and it does not claim full formal verification of Python execution.
 
 ## Required Gate
 
@@ -23,6 +23,8 @@ uv run ruff check .
 uv run mypy src
 uv run pytest --cov=verification_ecology_kit --cov-report=term-missing --cov-fail-under=92
 uv run check-jsonschema --check-metaschema src/verification_ecology_kit/schemas/*.schema.json
+uv run python scripts/check_formal_coverage.py
+uv run python scripts/check_formal_claims.py
 uv run python scripts/verify_no_secrets.py .
 uv run python scripts/scan_local_info.py .
 uv run python scripts/check_v1_readiness.py --strict
@@ -33,6 +35,12 @@ uv run mkdocs build --strict
 uv build --no-sources
 uv run python scripts/verify_package_contents.py
 uv run python scripts/smoke_install_wheel.py
+```
+
+Run the Lean gate from `formal/lean`:
+
+```bash
+lake build
 ```
 
 ## PyPI Trusted Publishing
@@ -54,6 +62,9 @@ where a job explicitly needs a narrower elevated permission.
 Do not publish a stable release if any of the following are true:
 
 - `scripts/check_v1_readiness.py --strict` reports a gap.
+- `scripts/check_formal_coverage.py` or `scripts/check_formal_claims.py`
+  reports a gap.
+- `lake build` fails under the pinned Lean toolchain.
 - Any required schema listed in that script is missing.
 - `tests/golden/theory_coverage.expected.json` contains `partial` or
   `not_implemented`.
@@ -67,7 +78,7 @@ Do not publish a stable release if any of the following are true:
 
 The local release artifact evidence is:
 
-- `dist/verification_ecology_kit-1.1.0.tar.gz`
-- `dist/verification_ecology_kit-1.1.0-py3-none-any.whl`
+- `dist/verification_ecology_kit-1.2.0.tar.gz`
+- `dist/verification_ecology_kit-1.2.0-py3-none-any.whl`
 - package contents audit decision: `pass`
-- smoke install version: `1.1.0`
+- smoke install version: `1.2.0`

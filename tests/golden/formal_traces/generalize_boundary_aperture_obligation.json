@@ -1,0 +1,6 @@
+{
+  "trace_id": "golden-generalize-boundary-aperture",
+  "formal_semantics_version": "vet-core-1.2.0",
+  "operation": "generalize",
+  "expected": ["unexcluded_residual_or_boundary_work", "aperture_debt_when_narrowed"]
+}

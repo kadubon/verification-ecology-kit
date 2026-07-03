@@ -1,0 +1,6 @@
+{
+  "trace_id": "golden-authority-support-eligibility",
+  "formal_semantics_version": "vet-core-1.2.0",
+  "operation": "authority_allow",
+  "expected": ["all_required_support_refs_support_eligible"]
+}

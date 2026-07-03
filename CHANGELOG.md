@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.2.0
+
+- Added a Lean 4 VET-Core formalization covering syntax, static semantics,
+  packet-operation semantics, runtime-stage semantics, ecological invariants,
+  authority rules, aperture rules, residual accounting, and safety theorems.
+- Added formal claim and semantic-boundary documentation that limits the formal
+  claim to VET-Core and states that Python is conformance-tested rather than
+  fully formally verified.
+- Added formal trace schemas, `verification_ecology_kit.formal_bridge`, golden
+  formal coverage, and formal Python conformance tests.
+- Added `scripts/check_formal_coverage.py` and `scripts/check_formal_claims.py`
+  to block overstated release claims.
+- Updated readiness, release gates, CI, README, and package metadata for the
+  v1.2.0 formal VET-Core release.
+
 ## 1.1.0
 
 - Added executable semantic readiness gates for operational empty bundles, strict JSON Pointer indices, authority denial paths, packet operation admissibility, runtime reporting, and scanner redaction.

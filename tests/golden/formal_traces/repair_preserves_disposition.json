@@ -1,0 +1,6 @@
+{
+  "trace_id": "golden-repair-disposition",
+  "formal_semantics_version": "vet-core-1.2.0",
+  "operation": "repair",
+  "expected": ["residual_preserved_or_disposed_with_witness"]
+}

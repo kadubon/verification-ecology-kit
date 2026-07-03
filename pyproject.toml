@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "verification-ecology-kit"
-version = "1.1.0"
+version = "1.2.0"
 description = "Python toolkit for verification auditing, residual ledgers, conformance checks, and verifier packet workflows."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -71,6 +71,7 @@ include = [
   "/tests",
   "/examples",
   "/docs",
+  "/formal",
   "/scripts",
   "/security/allowlist.toml",
   "/security/allowlist.example.toml",
@@ -101,6 +102,7 @@ exclude = [
   ".mypy_cache",
   ".hypothesis",
   ".venv",
+  "**/.lake/**",
   "dist",
   "build",
   "**/.ipynb_checkpoints/**",

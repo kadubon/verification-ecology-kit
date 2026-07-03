@@ -1,0 +1,6 @@
+{
+  "trace_id": "golden-redact-core",
+  "formal_semantics_version": "vet-core-1.2.0",
+  "operation": "redact",
+  "expected": ["redaction_residual", "authority_loss_recorded"]
+}

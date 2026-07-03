@@ -14,6 +14,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
@@ -22,6 +24,9 @@ REQUIRED_DOCS = (
     "docs/quickstart.md",
     "docs/concepts.md",
     "docs/theory_mapping.md",
+    "docs/formal_semantics.md",
+    "docs/formal_claims.md",
+    "docs/semantic_boundary.md",
     "docs/data_model.md",
     "docs/schemas.md",
     "docs/conformance.md",
@@ -51,6 +56,9 @@ REQUIRED_SCHEMAS = (
     "counterexample-channel.schema.json",
     "digest-record.schema.json",
     "frontier-profile.schema.json",
+    "formal-semantics-report.schema.json",
+    "formal-stage.schema.json",
+    "formal-trace.schema.json",
     "judgment-record.schema.json",
     "ledger-event.schema.json",
     "lifecycle-status-event.schema.json",
@@ -71,7 +79,10 @@ REQUIRED_SCHEMAS = (
     "verifier-packet.schema.json",
 )
 
-REQUIRED_GOLDEN = ("tests/golden/theory_coverage.expected.json",)
+REQUIRED_GOLDEN = (
+    "tests/golden/theory_coverage.expected.json",
+    "tests/golden/formal_coverage.expected.json",
+)
 
 REQUIRED_EXAMPLES = (
     "examples/basic_packet.py",
@@ -132,15 +143,17 @@ def main(argv: list[str] | None = None) -> int:
     claims_v1 = _claims_v1(version)
     fail_release = bool(gaps) and (claims_v1 or args.strict)
     stable_claim = claims_v1 and not gaps
+    complete_formal_operational_semantics = stable_claim and _version_tuple(version) >= (1, 2, 0)
     residual_obligations = [f"{gate.name}: {gate.detail}" for gate in gaps]
 
     report = {
         "version": version,
         "stable_claim": stable_claim,
-        "complete_operational_semantics_claim": False,
+        "complete_operational_semantics_claim": complete_formal_operational_semantics,
         "claims_v1_or_later": claims_v1,
         "ready_for_v1_0_0": not gaps,
         "ready_for_v1_1_0": not gaps,
+        "ready_for_v1_2_0": not gaps,
         "strict": args.strict,
         "decision": "pass" if not fail_release else "fail",
         "passed_gates": [gate.to_dict() for gate in gates if gate.passed],
@@ -149,7 +162,7 @@ def main(argv: list[str] | None = None) -> int:
         "gaps": [gate.to_dict() for gate in gaps],
         "residual_obligations": residual_obligations,
         "recommendation": (
-            "stable operational release can be published without formal-semantics claim"
+            "stable formal VET-Core release can be published"
             if not fail_release
             else "resolve failed gates before publishing a stable release"
         ),
@@ -195,8 +208,12 @@ def _collect_gates(
         _gate_cli_real_audit_inputs(cli),
         _gate_readiness_records_release_rule(readiness),
         _gate_release_gates_include_strict_check(release_gates),
+        _gate_release_gates_include_formal_checks(release_gates),
         _gate_workflows_use_locked_sync(),
+        _gate_workflows_include_formal_job(),
         _gate_semantic_regression_checks(),
+        _gate_formal_coverage(),
+        _gate_formal_claims(),
         _gate_v1_audit_semantic_statuses(v1_audit),
         _gate_schema_semantic_coverage(),
         _gate_no_placeholder_terms(),
@@ -269,6 +286,9 @@ def _gate_readme_links(readme: str) -> Gate:
         "docs/v1_readiness.md",
         "docs/release_readiness.md",
         "docs/release_gates.md",
+        "docs/formal_semantics.md",
+        "docs/formal_claims.md",
+        "docs/semantic_boundary.md",
     )
     missing = [item for item in required if item not in readme]
     return Gate(
@@ -377,6 +397,20 @@ def _gate_release_gates_include_strict_check(release_gates: str) -> Gate:
     )
 
 
+def _gate_release_gates_include_formal_checks(release_gates: str) -> Gate:
+    required = (
+        "scripts/check_formal_coverage.py",
+        "scripts/check_formal_claims.py",
+        "lake build",
+    )
+    missing = [item for item in required if item not in release_gates]
+    return Gate(
+        "release_gate_formal_checks",
+        not missing,
+        "release gates include formal checks" if not missing else f"missing: {missing}",
+    )
+
+
 def _gate_workflows_use_locked_sync() -> Gate:
     workflow = _read_text(".github/workflows/workflow.yml")
     unlocked = "uv sync --all-extras --dev" in workflow
@@ -387,6 +421,52 @@ def _gate_workflows_use_locked_sync() -> Gate:
         "workflows use locked dependency sync"
         if locked and not unlocked
         else "workflow still contains unlocked uv sync",
+    )
+
+
+def _gate_workflows_include_formal_job() -> Gate:
+    workflow = _read_text(".github/workflows/workflow.yml")
+    required = (
+        "formal:",
+        "lake build",
+        "scripts/check_formal_coverage.py",
+        "scripts/check_formal_claims.py",
+    )
+    missing = [item for item in required if item not in workflow]
+    return Gate(
+        "workflow_formal_job",
+        not missing,
+        "workflow includes formal job" if not missing else f"missing: {missing}",
+    )
+
+
+def _gate_formal_coverage() -> Gate:
+    try:
+        from scripts.check_formal_coverage import check_formal_coverage
+    except Exception as exc:  # pragma: no cover - readiness import guard
+        return Gate("formal_coverage", False, f"formal coverage import failed: {exc}")
+    report = check_formal_coverage()
+    return Gate(
+        "formal_coverage",
+        report.decision == "pass",
+        "formal coverage map is complete"
+        if report.decision == "pass"
+        else "; ".join(report.findings[:8]),
+    )
+
+
+def _gate_formal_claims() -> Gate:
+    try:
+        from scripts.check_formal_claims import check_formal_claims
+    except Exception as exc:  # pragma: no cover - readiness import guard
+        return Gate("formal_claims", False, f"formal claims import failed: {exc}")
+    report = check_formal_claims()
+    return Gate(
+        "formal_claims",
+        report.decision == "pass",
+        "formal claims are controlled"
+        if report.decision == "pass"
+        else "; ".join(report.findings[:8]),
     )
 
 
@@ -660,6 +740,12 @@ def _gate_schema_semantic_coverage() -> Gate:
     packet_schema = _read_text("src/verification_ecology_kit/schemas/verifier-packet.schema.json")
     bundle_schema = _read_text("src/verification_ecology_kit/schemas/vet-bundle.schema.json")
     runtime_schema = _read_text("src/verification_ecology_kit/schemas/runtime-report.schema.json")
+    formal_trace_schema = _read_text(
+        "src/verification_ecology_kit/schemas/formal-trace.schema.json"
+    )
+    formal_report_schema = _read_text(
+        "src/verification_ecology_kit/schemas/formal-semantics-report.schema.json"
+    )
     required = {
         "anti_overclosure": packet_schema,
         "residual_liveness": packet_schema,
@@ -671,12 +757,16 @@ def _gate_schema_semantic_coverage() -> Gate:
         "frontier_updates": runtime_schema,
         "aperture_updates": runtime_schema,
         "lineage_checks": runtime_schema,
+        "formal_semantics_version": formal_trace_schema,
+        "residual_deltas": formal_trace_schema,
+        "authority_deltas": formal_trace_schema,
+        "expected_authority_blockers_present": formal_report_schema,
     }
     missing = [term for term, source in required.items() if term not in source]
     return Gate(
         "schema_semantic_coverage",
         not missing,
-        "schemas expose v1.1 semantic fields" if not missing else f"missing: {missing}",
+        "schemas expose v1.2 semantic and formal fields" if not missing else f"missing: {missing}",
     )
 
 
@@ -779,11 +869,16 @@ def _function_body(source: str, name: str) -> str:
 
 
 def _claims_v1(version: str) -> bool:
+    major, minor, patch = _version_tuple(version)
+    return (major, minor, patch) >= (1, 0, 0)
+
+
+def _version_tuple(version: str) -> tuple[int, int, int]:
     match = re.match(r"^(\d+)\.(\d+)\.(\d+)", version)
     if not match:
-        return False
+        return (0, 0, 0)
     major, minor, patch = (int(group) for group in match.groups())
-    return (major, minor, patch) >= (1, 0, 0)
+    return major, minor, patch
 
 
 if __name__ == "__main__":

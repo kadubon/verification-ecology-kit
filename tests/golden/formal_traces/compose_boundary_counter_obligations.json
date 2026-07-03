@@ -1,0 +1,6 @@
+{
+  "trace_id": "golden-compose-boundary-counter",
+  "formal_semantics_version": "vet-core-1.2.0",
+  "operation": "compose",
+  "expected": ["fresh_boundary_obligation", "fresh_counter_packet_obligation"]
+}

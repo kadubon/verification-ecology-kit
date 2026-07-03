@@ -3,6 +3,15 @@
 from verification_ecology_kit.audit.reports import AuditEngine
 from verification_ecology_kit.canonicalization import Canonicalizer
 from verification_ecology_kit.digest import DigestPolicy
+from verification_ecology_kit.formal_bridge import (
+    FormalSemanticsReport,
+    FormalStageTrace,
+    FormalTrace,
+    check_formal_trace,
+    check_runtime_stage_trace,
+    export_operation_trace,
+    export_runtime_stage_trace,
+)
 from verification_ecology_kit.model.authority import AuthorityEngine
 from verification_ecology_kit.model.certification import CertificationEngine
 from verification_ecology_kit.model.conformance import ConformanceEngine, VetBundle
@@ -34,7 +43,7 @@ from verification_ecology_kit.references import (
 )
 from verification_ecology_kit.runtime.engine import RuntimeEngine
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 __all__ = [
     "AuditEngine",
@@ -48,6 +57,9 @@ __all__ = [
     "DigestPolicy",
     "DigestRecord",
     "EcologyEligibility",
+    "FormalSemanticsReport",
+    "FormalStageTrace",
+    "FormalTrace",
     "MaturityProfile",
     "ObjectEnvelope",
     "ObjectRef",
@@ -67,4 +79,8 @@ __all__ = [
     "VerifierPacket",
     "VetBundle",
     "__version__",
+    "check_formal_trace",
+    "check_runtime_stage_trace",
+    "export_operation_trace",
+    "export_runtime_stage_trace",
 ]

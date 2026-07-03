@@ -14,6 +14,7 @@ __pycache__/
 coverage.xml
 htmlcov/
 site/
+**/.lake/
 .env
 .env.*
 !.env.example

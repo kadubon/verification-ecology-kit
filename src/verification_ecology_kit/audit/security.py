@@ -52,6 +52,12 @@ TOKEN_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
 )
 HIGH_ENTROPY_PATTERN = re.compile(r"\b[A-Za-z0-9_\-+/]{32,}\b")
+LOCAL_ABSOLUTE_PATH_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"[A-Za-z]:[\\/]+Users[\\/][^\s\"'<>]+", re.IGNORECASE),
+    re.compile(r"/mnt/[a-z]/Users/[^\s\"'<>]+", re.IGNORECASE),
+    re.compile(r"/home/[A-Za-z0-9._-]+/[^\s\"'<>]+"),
+    re.compile(r"/Users/[A-Za-z0-9._-]+/[^\s\"'<>]+"),
+)
 
 
 def scan_secrets(
@@ -161,6 +167,7 @@ def verify_package_paths(paths: list[Path]) -> AuditReport:
                     "package_content_leak", f"Forbidden build artifact: {path.as_posix()}", "high"
                 )
             )
+        findings.extend(_local_path_findings(path.as_posix(), source=path.as_posix()))
         if ".ipynb_checkpoints" in path.parts:
             findings.append(
                 AuditFinding(
@@ -192,12 +199,39 @@ def verify_package_archives(dist: Path) -> AuditReport:
                 wheels += 1
                 evidence_refs.append(archive.as_posix())
                 with zipfile.ZipFile(archive) as wheel:
-                    paths.extend(Path(name) for name in wheel.namelist())
+                    for name in wheel.namelist():
+                        paths.append(Path(name))
+                        findings.extend(
+                            _local_path_findings(name, source=f"{archive.as_posix()}:{name}")
+                        )
+                        with wheel.open(name) as wheel_member:
+                            findings.extend(
+                                _local_path_findings(
+                                    _decode_text(wheel_member.read()),
+                                    source=f"{archive.as_posix()}:{name}",
+                                )
+                            )
             elif archive.suffixes[-2:] == [".tar", ".gz"]:
                 sdists += 1
                 evidence_refs.append(archive.as_posix())
                 with tarfile.open(archive) as sdist:
-                    paths.extend(Path(member.name) for member in sdist.getmembers())
+                    for tar_member in sdist.getmembers():
+                        paths.append(Path(tar_member.name))
+                        findings.extend(
+                            _local_path_findings(
+                                tar_member.name,
+                                source=f"{archive.as_posix()}:{tar_member.name}",
+                            )
+                        )
+                        if tar_member.isfile():
+                            handle = sdist.extractfile(tar_member)
+                            if handle is not None:
+                                findings.extend(
+                                    _local_path_findings(
+                                        _decode_text(handle.read()),
+                                        source=f"{archive.as_posix()}:{tar_member.name}",
+                                    )
+                                )
 
     if wheels == 0:
         findings.append(
@@ -224,6 +258,7 @@ def _iter_text_files(path: Path) -> list[Path]:
         return [path]
     excluded = {
         ".git",
+        ".lake",
         ".venv",
         ".pytest_cache",
         ".ruff_cache",
@@ -250,3 +285,22 @@ def _iter_text_files(path: Path) -> list[Path]:
         }:
             files.append(file_path)
     return files
+
+
+def _decode_text(raw: bytes) -> str:
+    return raw.decode("utf-8", errors="ignore")
+
+
+def _local_path_findings(text: str, *, source: str) -> list[AuditFinding]:
+    findings: list[AuditFinding] = []
+    for pattern in LOCAL_ABSOLUTE_PATH_PATTERNS:
+        for match in pattern.finditer(text):
+            findings.append(
+                AuditFinding(
+                    "local_path_leak",
+                    f"Local absolute path in package content: {_redacted(match.group(0))}",
+                    "high",
+                    evidence_refs=(source,),
+                )
+            )
+    return findings

@@ -1,0 +1,6 @@
+{
+  "trace_id": "golden-specialize-residuals",
+  "formal_semantics_version": "vet-core-1.2.0",
+  "operation": "specialize",
+  "expected": ["inherited_residuals_preserved", "scope_accounted"]
+}

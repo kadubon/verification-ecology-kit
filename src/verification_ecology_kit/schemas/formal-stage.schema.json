@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verification-ecology-kit/schemas/formal-stage.schema.json",
+  "title": "Formal Stage Trace",
+  "type": "object",
+  "required": ["stage", "subject_ref", "decision"],
+  "properties": {
+    "stage": { "type": "string" },
+    "subject_ref": { "type": "string" },
+    "decision": { "type": "string" },
+    "evidence_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "residual_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "authority_effect": { "type": "string" }
+  },
+  "additionalProperties": false
+}

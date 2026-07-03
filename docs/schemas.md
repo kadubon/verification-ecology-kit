@@ -75,6 +75,21 @@
 - id: `https://vet.example/schema/digest-record.schema.json`
 - type: `object`
 
+## formal-semantics-report.schema.json
+
+- id: `https://verification-ecology-kit/schemas/formal-semantics-report.schema.json`
+- type: `object`
+
+## formal-stage.schema.json
+
+- id: `https://verification-ecology-kit/schemas/formal-stage.schema.json`
+- type: `object`
+
+## formal-trace.schema.json
+
+- id: `https://verification-ecology-kit/schemas/formal-trace.schema.json`
+- type: `object`
+
 ## frontier-profile.schema.json
 
 - id: `https://vet.example/schema/frontier-profile.schema.json`

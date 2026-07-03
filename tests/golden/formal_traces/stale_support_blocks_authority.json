@@ -1,0 +1,6 @@
+{
+  "trace_id": "golden-stale-support-blocks",
+  "formal_semantics_version": "vet-core-1.2.0",
+  "operation": "authority_allow",
+  "expected": ["stale_revoked_unknown_support_blocks_allow"]
+}

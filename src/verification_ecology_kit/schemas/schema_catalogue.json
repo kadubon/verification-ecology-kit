@@ -30,6 +30,9 @@
     "status-event.schema.json",
     "certification-record.schema.json",
     "aperture.schema.json",
+    "formal-stage.schema.json",
+    "formal-trace.schema.json",
+    "formal-semantics-report.schema.json",
     "maturity-profile.schema.json",
     "vet-bundle.schema.json"
   ]

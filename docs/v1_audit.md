@@ -2,12 +2,14 @@
 
 This audit maps the theory-facing terms from Verifier Ecology Theory to the
 software artifacts that make them operational in this package. The package does
-not claim to prove the paper's theorems. It implements deterministic records,
-schema contracts, checks, audits, reports, and residual obligations that can be
-run by users and CI.
+not claim to prove every theorem in the paper. For the implemented VET-Core,
+v1.2.0 adds Lean syntax, static semantics, small-step operation semantics,
+runtime semantics, ecological invariants, and machine-checked safety theorems.
+Python remains conformance-tested against that formal VET-Core contract.
 
 The machine-readable witness for this page is
-`tests/golden/theory_coverage.expected.json`.
+`tests/golden/theory_coverage.expected.json`. The formal coverage witness is
+`tests/golden/formal_coverage.expected.json`.
 
 Status values:
 
@@ -87,14 +89,18 @@ Status values:
 | ConformanceProfile | `model/records.py`: `ConformanceProfile` | `conformance-report.schema.json` | `vek conformance --profile` | `tests/unit/test_conformance_authority.py` | `docs/conformance.md` | implemented |
 | ConformanceEngine | `model/conformance.py`: `ConformanceEngine` | `conformance-report.schema.json` | `vek conformance` | `tests/unit/test_conformance_authority.py`, `tests/integration/test_cli_extended.py`, `tests/unit/test_semantic_regressions.py` | `docs/conformance.md` | executable-check |
 | RuntimeEngine | `runtime/engine.py`: `RuntimeEngine` | `runtime-report.schema.json` | `vek runtime run` | `tests/unit/test_audits_runtime.py`, `tests/unit/test_extended_models.py` | `docs/examples.md` | executable-check |
+| Formal VET-Core syntax | `formal/lean/VETCore/Syntax.lean` | `formal-trace.schema.json` | release gate | `tests/formal/test_lean_files_exist.py` | `docs/formal_semantics.md` | executable-check |
+| Formal VET-Core semantics | `formal/lean/VETCore/Semantics.lean`, `formal/lean/VETCore/Runtime.lean` | `formal-semantics-report.schema.json` | release gate | `tests/formal/test_formal_claims.py` | `docs/formal_claims.md` | executable-check |
+| Python formal bridge | `formal_bridge.py`: `export_operation_trace`, `check_formal_trace` | `formal-trace.schema.json` | release gate | `tests/formal/test_formal_trace_export.py`, `tests/formal/test_python_operation_conformance.py` | `docs/semantic_boundary.md` | executable-check |
 | AuditEngine | `audit/reports.py`: `AuditEngine` | `audit-report.schema.json` | `vek audit ...` | `tests/unit/test_audits_runtime.py` | `docs/audits.md` | implemented |
 | secret/local-info/package-content scanners | `audit/security.py`, `audit/local_info.py`, `scripts/verify_package_contents.py` | `audit-report.schema.json` | `vek scan leaks`, `vek scan local-info` | `tests/security/test_scanners.py` | `docs/security.md` | implemented |
 
 ## Audit Result
 
-All rows required for the v1 operational contract have a concrete implementation
-path, schema-backed interface, operational check, or explicit residualization
-path. This is not a claim that the package is a complete theorem prover or a
-complete formal semantics for Verifier Ecology Theory. Any future extension that
-adds a theory term, public schema, or CLI workflow must update this page and
-`tests/golden/theory_coverage.expected.json` in the same change.
+All rows required for the v1.2 operational and formal VET-Core contract have a
+concrete implementation path, schema-backed interface, operational check,
+machine-checked Lean file, Python conformance test, or explicit residualization
+path. This is not a claim that the package proves all Verifier Ecology Theory.
+Any future extension that adds a theory term, public schema, formal rule, or CLI
+workflow must update this page and the golden coverage files in the same
+change.

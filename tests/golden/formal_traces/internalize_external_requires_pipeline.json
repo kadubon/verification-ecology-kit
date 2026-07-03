@@ -1,0 +1,6 @@
+{
+  "trace_id": "golden-internalize-external-pipeline",
+  "formal_semantics_version": "vet-core-1.2.0",
+  "operation": "internalize",
+  "expected": ["quarantine", "translation_residual_handling", "boundary_check", "local_counter_hook"]
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verification-ecology-kit/schemas/formal-semantics-report.schema.json",
+  "title": "Formal Semantics Conformance Report",
+  "type": "object",
+  "required": [
+    "trace_id",
+    "formal_operation_exists",
+    "preconditions_match",
+    "expected_residuals_present",
+    "expected_boundaries_present",
+    "expected_authority_blockers_present",
+    "invariant_checks_pass",
+    "report_digest",
+    "findings"
+  ],
+  "properties": {
+    "trace_id": { "type": "string" },
+    "formal_operation_exists": { "type": "boolean" },
+    "preconditions_match": { "type": "boolean" },
+    "expected_residuals_present": { "type": "boolean" },
+    "expected_boundaries_present": { "type": "boolean" },
+    "expected_authority_blockers_present": { "type": "boolean" },
+    "invariant_checks_pass": { "type": "boolean" },
+    "report_digest": { "type": "string" },
+    "findings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

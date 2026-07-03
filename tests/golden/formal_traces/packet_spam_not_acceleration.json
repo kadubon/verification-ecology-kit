@@ -1,0 +1,6 @@
+{
+  "trace_id": "golden-packet-spam",
+  "formal_semantics_version": "vet-core-1.2.0",
+  "operation": "frontier_update",
+  "expected": ["packet_count_increase_without_frontier_or_aperture_is_not_acceleration"]
+}

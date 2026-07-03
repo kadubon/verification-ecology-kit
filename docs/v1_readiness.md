@@ -1,7 +1,7 @@
 # V1 Readiness
 
 This page tracks whether the package is ready to carry the v1 line, including
-the current `1.1.0` semantic-hardening release.
+the current `1.2.0` formal VET-Core release.
 
 The project may contain useful working features before a stable v1 claim. A v1
 release requires a stronger claim: the command line interface, Python API,
@@ -10,13 +10,14 @@ negative gates must all agree with the theory-facing contract.
 
 ## Current Release State
 
-Current package version: `1.1.0`
+Current package version: `1.2.0`
 
-Current readiness decision: **ready for v1 local release artifacts when the
-strict gate passes on the current worktree**.
+Current readiness decision: **ready for v1.2.0 release artifacts when the
+strict gate, formal gate, package gate, docs gate, and security gate pass on
+the current worktree**.
 
-The package is usable as a stable local OSS implementation. The readiness check
-is available as:
+The package is usable as a stable OSS implementation with a formal VET-Core
+claim. The readiness check is available as:
 
 ```bash
 uv run python scripts/check_v1_readiness.py
@@ -40,6 +41,8 @@ uv run python scripts/check_v1_readiness.py --strict
 | Residual ledger | Residual changes are traceable and do not silently delete obligations. | Implemented for add, merge, retire, quarantine, redact, trace checks, and package-level tests. |
 | Packet operations | Fork, specialize, generalize, compose, contrast, repair, retire, quarantine, internalize, and redact operate on real packets. | Implemented at CLI and API level; operation examples need broader documentation. |
 | Runtime loop | Runtime can load state, route residuals, generate packets, and save the result. | Implemented with in-memory runtime and JSON state persistence for saved ecology state. |
+| Formal semantics | VET-Core syntax, static semantics, operation semantics, runtime semantics, invariants, and safety theorems compile in Lean. | Implemented in `formal/lean/VETCore` and checked by `lake build`. |
+| Python formal conformance | Python operation traces map to the formal VET-Core names and required obligations. | Implemented through `verification_ecology_kit.formal_bridge`, formal schemas, golden traces, and `tests/formal`. |
 | Audits | Packet ecology, residual metabolism, aperture regression, adversarial ingress, schema overclosure, and monoculture audits have documented inputs. | Implemented; examples and negative fixture coverage should grow. |
 | Security | Secret and local information scanners are available and included in release checks. | Implemented with allowlist support; deeper archive scanning can improve confidence. |
 | Documentation | A first-time user can understand purpose, install, run examples, and find deeper docs. | Improved README and docs navigation; API examples need more breadth. |
@@ -64,6 +67,9 @@ A v1 release candidate should satisfy all of the following:
 - `uv run bandit -c pyproject.toml -r src scripts`
 - `uv run pip-audit`
 - `uvx zizmor .`
+- `uv run python scripts/check_formal_coverage.py`
+- `uv run python scripts/check_formal_claims.py`
+- `cd formal/lean && lake build`
 - `uv run mkdocs build --strict`
 - `uv build --no-sources`
 - `uv run python scripts/verify_package_contents.py`
@@ -75,3 +81,7 @@ A v1 release candidate should satisfy all of the following:
 Do not bump the package version to a stable v1 release while the readiness
 script reports gaps. If an urgent release is needed before every item is
 complete, publish a release candidate and keep the residual obligations visible.
+
+Do not claim complete VET-Core formal operational semantics unless
+`lake build`, `scripts/check_formal_coverage.py`,
+`scripts/check_formal_claims.py`, and the Python formal tests pass.

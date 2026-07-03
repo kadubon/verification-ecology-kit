@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verification-ecology-kit/schemas/formal-trace.schema.json",
+  "title": "Formal VET-Core Trace",
+  "type": "object",
+  "required": [
+    "trace_id",
+    "formal_semantics_version",
+    "before_state",
+    "operation",
+    "after_state",
+    "residual_deltas",
+    "boundary_deltas",
+    "authority_deltas",
+    "aperture_deltas",
+    "frontier_deltas",
+    "stages",
+    "invariant_checks"
+  ],
+  "properties": {
+    "trace_id": { "type": "string" },
+    "formal_semantics_version": { "type": "string" },
+    "before_state": { "type": "object" },
+    "operation": { "type": "string" },
+    "after_state": { "type": "object" },
+    "residual_deltas": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "boundary_deltas": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "authority_deltas": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "aperture_deltas": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "frontier_deltas": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "stages": {
+      "type": "array",
+      "items": { "$ref": "formal-stage.schema.json" }
+    },
+    "invariant_checks": {
+      "type": "object",
+      "additionalProperties": { "type": "boolean" }
+    }
+  },
+  "additionalProperties": false
+}

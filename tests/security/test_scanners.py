@@ -102,6 +102,12 @@ def test_package_content_scanner_detects_tex_artifact() -> None:
     assert report.decision == "quarantine"
 
 
+def test_package_content_scanner_detects_local_absolute_path() -> None:
+    report = verify_package_paths([Path("C:" + "/" + "Users" + "/name/project/private.txt")])
+    assert report.decision == "quarantine"
+    assert "local_path_leak" in {finding.code for finding in report.findings}
+
+
 def test_package_content_script_requires_artifacts(tmp_path: Path) -> None:
     dist = tmp_path / "dist"
     dist.mkdir()
@@ -148,3 +154,23 @@ def test_package_archive_scanner_detects_forbidden_member(tmp_path: Path) -> Non
 
     assert report.decision == "quarantine"
     assert "package_content_leak" in {finding.code for finding in report.findings}
+
+
+def test_package_archive_scanner_detects_local_absolute_path_in_content(tmp_path: Path) -> None:
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    with zipfile.ZipFile(dist / "bad-1.0.0-py3-none-any.whl", "w") as wheel:
+        wheel.writestr(
+            "bad/__init__.py",
+            "ROOT = '" + "C:" + "/" + "Users" + "/name/project'\n",
+        )
+    with tarfile.open(dist / "bad-1.0.0.tar.gz", "w:gz") as sdist:
+        data = b"clean"
+        info = tarfile.TarInfo("bad-1.0.0/README.md")
+        info.size = len(data)
+        sdist.addfile(info, io.BytesIO(data))
+
+    report = verify_package_archives(dist)
+
+    assert report.decision == "quarantine"
+    assert "local_path_leak" in {finding.code for finding in report.findings}

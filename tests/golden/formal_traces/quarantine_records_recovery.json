@@ -1,0 +1,6 @@
+{
+  "trace_id": "golden-quarantine-recovery",
+  "formal_semantics_version": "vet-core-1.2.0",
+  "operation": "quarantine",
+  "expected": ["quarantine_reason", "recovery_trigger"]
+}

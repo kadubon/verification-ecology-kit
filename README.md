@@ -1,15 +1,16 @@
 # verification-ecology-kit
 
-verification-ecology-kit is a stable operational toolkit for VET-style records, schemas, residual ledgers, conformance reports, packet operations, and audits. It is not a theorem prover and does not claim to be a complete formal semantics of Verifier Ecology Theory.
+verification-ecology-kit provides a complete formal operational semantics for the VET-Core implemented by this package, with machine-checked safety theorems and Python conformance tests against the formal semantics.
 
 It is built for a simple problem: verification work often produces more than
 one word of output. A result can pass, fail, need more evidence, depend on a
 stale source, hide an unresolved boundary, or be usable for research but not
 safe for deployment. This package gives those differences a structured form.
 
-It is not a complete formal semantics or theorem prover for Verifier Ecology
-Theory. It is a practical Python and JSON implementation for recording,
-checking, and auditing verification evidence.
+It is also a practical Python and JSON implementation for recording, checking,
+and auditing verification evidence. The formal claim is limited to the
+implemented VET-Core language. It does not prove every statement in Verifier
+Ecology Theory.
 
 It helps you answer practical questions such as:
 
@@ -88,8 +89,10 @@ artifacts.
 
 ## What This Package Does Not Do
 
-This is not a theorem prover and does not claim to prove every property in the
-paper.
+The package includes a Lean 4 formalization for the VET-Core implemented here.
+That formal layer is the theorem-proving component of the project. The Python
+implementation is conformance-tested against the formal VET-Core semantics; it
+is not fully formally verified.
 
 It does not replace human review, domain expertise, model checking, formal
 proof, fuzzing, or security testing. It gives those activities a shared record
@@ -99,16 +102,17 @@ lost.
 In short:
 
 - it records and checks verification evidence
+- it defines and machine-checks the VET-Core operation rules
 - it keeps unfinished work visible
 - it helps decide whether evidence can be reused
-- it does not prove by itself that a system is correct
+- it does not prove by itself that an external system is correct
 
 ## Semantic Completeness Boundary
 
-Verifier Ecology Theory is broader than this software package. The package
-implements an operational subset: records, schema contracts, reference and
-digest checks, residual accounting, support-aware authority checks, packet
-operation checks, runtime reports, and local audits.
+Verifier Ecology Theory is broader than this software package. Version 1.2.0
+defines a bounded VET-Core language and formalizes its syntax, static
+semantics, packet-operation semantics, runtime-stage semantics, ecological
+invariants, and safety theorems in Lean 4.
 
 That means:
 
@@ -119,6 +123,9 @@ That means:
 - Runtime checks report structured stages instead of unlabeled strings.
 - Packet operations preserve or residualize origin, residual, boundary, and
   counter-packet obligations.
+- Formal traces exported from Python operations are checked against the
+  VET-Core operation names and required residual, boundary, authority, aperture,
+  and invariant obligations.
 
 It does not mean:
 
@@ -126,6 +133,7 @@ It does not mean:
 - every possible verifier ecology can be fully modeled
 - external evidence is trusted without records, digests, and status checks
 - an `allow` label is enough to authorize use without support evidence
+- Python execution is fully formally verified
 
 When the package cannot decide a claim, it should preserve the issue as a
 residual rather than silently treating the claim as closed.
@@ -144,6 +152,7 @@ Choose the path that matches what you want to do.
 | Check a bundle of related records | [docs/conformance.md](docs/conformance.md) |
 | Track unresolved work | [Track Open Work](#3-track-open-work) |
 | Run audits | [docs/audits.md](docs/audits.md) |
+| Review the formal semantics | [docs/formal_semantics.md](docs/formal_semantics.md), [docs/formal_claims.md](docs/formal_claims.md), and [docs/semantic_boundary.md](docs/semantic_boundary.md) |
 | Understand the theory mapping | [docs/theory_mapping.md](docs/theory_mapping.md) and [docs/v1_audit.md](docs/v1_audit.md) |
 | Review release readiness | [docs/v1_readiness.md](docs/v1_readiness.md), [docs/release_readiness.md](docs/release_readiness.md), and [docs/release_gates.md](docs/release_gates.md) |
 | Check security posture | [SECURITY.md](SECURITY.md) and [docs/security.md](docs/security.md) |
@@ -158,6 +167,9 @@ Recommended reading order for a first pass:
 5. Check [docs/v1_audit.md](docs/v1_audit.md) when you need to know which
    theory-facing claims are implemented as full objects, operational checks,
    partial semantic checks, or residualized interfaces.
+6. Read [docs/formal_claims.md](docs/formal_claims.md) and
+   [docs/semantic_boundary.md](docs/semantic_boundary.md) before relying on
+   the formal VET-Core claim.
 
 ## Core Ideas In Plain Words
 
@@ -408,6 +420,8 @@ Use this map when you need more detail than the README.
 | Runnable examples | [docs/examples.md](docs/examples.md) and [examples/](examples/) |
 | Security model | [docs/security.md](docs/security.md) |
 | Theory mapping | [docs/theory_mapping.md](docs/theory_mapping.md) |
+| Formal semantics | [docs/formal_semantics.md](docs/formal_semantics.md) |
+| Formal claim boundary | [docs/formal_claims.md](docs/formal_claims.md) and [docs/semantic_boundary.md](docs/semantic_boundary.md) |
 | v1 implementation audit | [docs/v1_audit.md](docs/v1_audit.md) |
 | v1 readiness | [docs/v1_readiness.md](docs/v1_readiness.md) |
 | Release readiness | [docs/release_readiness.md](docs/release_readiness.md) |
@@ -420,6 +434,7 @@ Use this map when you need more detail than the README.
 - [src/verification_ecology_kit/schemas/](src/verification_ecology_kit/schemas/):
   bundled JSON schemas
 - [examples/](examples/): small runnable examples
+- [formal/](formal/): Lean VET-Core semantics and optional TLA+ model
 - [tests/](tests/): unit, property, security, CLI, and golden tests
 - [tests/golden/](tests/golden/): expected behavior cases
 - [docs/](docs/): user and release documentation
@@ -457,6 +472,15 @@ uv build --no-sources
 uv run python scripts/verify_package_contents.py
 uv run python scripts/smoke_install_wheel.py
 uv run python scripts/check_v1_readiness.py --strict
+uv run python scripts/check_formal_coverage.py
+uv run python scripts/check_formal_claims.py
+```
+
+Run the Lean formal gate:
+
+```bash
+cd formal/lean
+lake build
 ```
 
 For release-specific evidence, read
@@ -477,11 +501,13 @@ If you find a security issue, see [SECURITY.md](SECURITY.md).
 
 ## Project Status
 
-Current version: `1.1.0`
+Current version: `1.2.0`
 
 Status:
 
-- stable operational OSS toolkit with v1.1 semantic hardening
+- stable operational OSS toolkit with complete VET-Core formal operational semantics
+- Lean 4 machine-checked safety theorems for the formal VET-Core
+- Python conformance tests against the formal trace contract
 - typed Python package
 - command line interface included
 - JSON schemas included
@@ -489,7 +515,7 @@ Status:
 - golden tests included
 - GitHub repository published
 - local package build and wheel smoke install pass
-- PyPI and GitHub release publication are performed after tagging
+- PyPI and GitHub release publication are performed from the release gate
 
 Before treating the current package as v1-ready, check:
 
@@ -497,6 +523,8 @@ Before treating the current package as v1-ready, check:
 - [docs/v1_readiness.md](docs/v1_readiness.md)
 - [docs/release_readiness.md](docs/release_readiness.md)
 - [docs/release_gates.md](docs/release_gates.md)
+- [docs/formal_claims.md](docs/formal_claims.md)
+- [docs/semantic_boundary.md](docs/semantic_boundary.md)
 
 The public API is intended to stabilize around the classes exported from
 `verification_ecology_kit`.
