@@ -9,8 +9,11 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError, ValidationError
 
 from verification_ecology_kit.digest import DigestPolicy, object_digest_input
+from verification_ecology_kit.model.authority import AuthorityEngine
 from verification_ecology_kit.model.ledger import ResidualLedger
+from verification_ecology_kit.model.lifecycle import StatusEvent, StatusFold, StatusView
 from verification_ecology_kit.model.records import ConformanceProfile, LifecycleStatus, jsonable
+from verification_ecology_kit.model.residuals import check_residual_liveness
 from verification_ecology_kit.references import (
     ObjectEnvelope,
     ObjectRef,
@@ -49,6 +52,14 @@ class VetBundle:
                 "schema_catalogue": {
                     "catalogue_id": self.schema_catalogue.catalogue_id,
                     "accepted_schema_versions": self.schema_catalogue.accepted_schema_versions,
+                    "schemas": self.schema_catalogue.schemas,
+                    "migration_witnesses": {
+                        f"{source}->{target}": witness
+                        for (
+                            source,
+                            target,
+                        ), witness in self.schema_catalogue.migration_witnesses.items()
+                    },
                 },
                 "objects": [envelope.to_dict() for envelope in self.objects],
                 "references": [ref.to_dict() for ref in self.references],
@@ -81,6 +92,14 @@ class ConformanceEngine:
     ) -> ConformanceReport:
         selected = profile or bundle.conformance_profile
         checks: list[CheckResult] = []
+        if selected != ConformanceProfile.CORE and not bundle.objects:
+            checks.append(
+                fail_result(
+                    "OperationalBundleNonEmpty",
+                    FailureCode.SCHEMA_INVALID,
+                    suggested_repair_hooks=("add_statused_objects_or_use_core_profile",),
+                )
+            )
         for check_name in self.ORDERED_CHECKS:
             if not self._required_for_profile(check_name, selected):
                 continue
@@ -165,12 +184,32 @@ class ConformanceEngine:
         resolver = ReferenceResolver(bundle_id=bundle.bundle_id, envelopes=bundle.objects)
         evidence_refs: list[str] = []
         for envelope in bundle.objects:
-            status = self._status_from_payload(envelope.payload)
+            status: LifecycleStatus | None
+            folded = self._status_fold_from_payload(envelope.object_id, envelope.payload)
+            if folded is not None:
+                status_view, result = folded
+                if not result.passed:
+                    return result
+                status = status_view.status
+                evidence_refs.extend(status_view.status_event_refs)
+            else:
+                status = self._status_from_payload(envelope.payload)
             if envelope.status_ref is not None:
                 _, target, result = resolver.resolve(envelope.status_ref)
                 if not result.passed:
                     return fail_result("StatusOK", FailureCode.UNRESOLVED_REFERENCE)
-                status = self._status_from_payload(target)
+                if isinstance(target, dict):
+                    folded = self._status_fold_from_payload(envelope.object_id, target)
+                    if folded is not None:
+                        status_view, fold_result = folded
+                        if not fold_result.passed:
+                            return fold_result
+                        status = status_view.status
+                        evidence_refs.extend(status_view.status_event_refs)
+                    else:
+                        status = self._status_from_payload(target)
+                else:
+                    status = self._status_from_payload(target)
                 evidence_refs.append(envelope.status_ref.object_id)
             if status is None:
                 return residual_result(
@@ -195,6 +234,21 @@ class ConformanceEngine:
                 LifecycleStatus.MIGRATED,
             }:
                 return fail_result("JudgmentOK", FailureCode.STATUS_BLOCKS_SUPPORT)
+            expected_contract = record.get("expected_contract_version")
+            if (
+                expected_contract is not None
+                and record.get("contract_version") != expected_contract
+            ):
+                return fail_result("JudgmentOK", FailureCode.JUDGMENT_INVALID)
+            expected_input_digest = record.get("expected_input_digest")
+            if (
+                expected_input_digest is not None
+                and record.get("input_digest") != expected_input_digest
+            ):
+                return fail_result("JudgmentOK", FailureCode.DIGEST_MISMATCH)
+            allowed_results = record.get("allowed_results")
+            if isinstance(allowed_results, list) and record.get("result") not in allowed_results:
+                return fail_result("JudgmentOK", FailureCode.JUDGMENT_INVALID)
             jvalid = str(
                 record.get("jvalid_result", record.get("JValid_result", "not_checked"))
             ).lower()
@@ -212,11 +266,11 @@ class ConformanceEngine:
         return pass_result("JudgmentOK", evidence_refs=tuple(evidence_refs))
 
     def _check_residualok(self, bundle: VetBundle) -> CheckResult:
-        non_live = [
-            residual.residual_id
-            for residual in bundle.residual_ledger.residuals.values()
-            if residual.status.value == "active" and residual.route is None
-        ]
+        non_live: list[str] = []
+        for residual in bundle.residual_ledger.residuals.values():
+            result = check_residual_liveness(residual)
+            if not result.passed:
+                non_live.append(residual.residual_id)
         if non_live:
             return residual_result(
                 "ResidualOK",
@@ -245,6 +299,20 @@ class ConformanceEngine:
                 support_judgments = tuple(record.get("support_judgment_refs", ()))
                 if required_support and not support_judgments:
                     return fail_result("AuthorityOK", FailureCode.AUTHORITY_MISMATCH)
+                denial_refs = self._authority_denial_refs(record)
+                if denial_refs:
+                    return fail_result(
+                        "AuthorityOK",
+                        FailureCode.AUTHORITY_MISMATCH,
+                        residual_refs=denial_refs,
+                    )
+                _, aggregate = AuthorityEngine().aggregate(
+                    self._authority_action(record),
+                    [],
+                    required_support_refs=required_support,
+                )
+                if not record.get("active_decision_record", True) and not aggregate.passed:
+                    return aggregate
                 continue
             if decision == "residualize":
                 residual_refs = tuple(str(ref) for ref in record.get("residual_gates", ()))
@@ -263,6 +331,43 @@ class ConformanceEngine:
             ]
             return pass_result("AuthorityOK", evidence_refs=tuple(refs))
         return pass_result("AuthorityOK")
+
+    def _authority_denial_refs(self, record: dict[str, Any]) -> tuple[str, ...]:
+        refs: list[str] = []
+        support_statuses = record.get("support_statuses", {})
+        if isinstance(support_statuses, dict):
+            refs.extend(
+                str(ref)
+                for ref, status in support_statuses.items()
+                if str(status) in {"stale", "unknown", "revoked"}
+            )
+        for key in (
+            "migrated_without_witness_refs",
+            "digest_mismatched_support_refs",
+            "unresolved_support_refs",
+            "counterexample_challenged_refs",
+            "expired_cex_closed_refs",
+            "non_live_soundgap_refs",
+            "residual_gates",
+        ):
+            value = record.get(key, ())
+            if isinstance(value, list | tuple):
+                refs.extend(str(ref) for ref in value)
+        if record.get("scope_action_match") == "fail":
+            refs.append("scope_action_mismatch")
+        if record.get("sandbox_required") and record.get("sandbox_status") != "active":
+            refs.append("sandbox_inactive")
+        if record.get("expiry_state") == "expired" or record.get("expired"):
+            refs.append("authority_expired")
+        return tuple(dict.fromkeys(refs))
+
+    def _authority_action(self, record: dict[str, Any]) -> Any:
+        from verification_ecology_kit.model.records import AuthorityAction
+
+        try:
+            return AuthorityAction(str(record.get("action", AuthorityAction.LOCAL_USE.value)))
+        except ValueError:
+            return AuthorityAction.LOCAL_USE
 
     def _status_from_payload(self, value: object) -> LifecycleStatus | None:
         if not isinstance(value, dict):
@@ -287,3 +392,39 @@ class ConformanceEngine:
             if isinstance(record, dict):
                 return record
         return None
+
+    def _status_fold_from_payload(
+        self, object_id: str, value: object
+    ) -> tuple[StatusView, CheckResult] | None:
+        if not isinstance(value, dict):
+            return None
+        raw_events = value.get("status_events")
+        if not isinstance(raw_events, list):
+            return None
+        events: list[StatusEvent] = []
+        for raw in raw_events:
+            if not isinstance(raw, dict):
+                return None
+            try:
+                events.append(
+                    StatusEvent(
+                        object_id=str(raw.get("object_id", object_id)),
+                        pre_status=LifecycleStatus(str(raw.get("pre_status", "unknown"))),
+                        post_status=LifecycleStatus(str(raw.get("post_status", "unknown"))),
+                        cause=str(raw.get("cause", "status fold")),
+                        actor_authority_ref=str(raw.get("actor_authority_ref", "local")),
+                        ledger_event_ref=str(raw.get("ledger_event_ref", "")),
+                        invalidation_trigger=str(raw.get("invalidation_trigger", "")),
+                        migration_target=str(raw.get("migration_target", "")),
+                        residual_disposition=tuple(
+                            str(item) for item in raw.get("residual_disposition", ())
+                        ),
+                        predecessor_event_ref=raw.get("predecessor_event_ref"),
+                        provenance=tuple(str(item) for item in raw.get("provenance", ())),
+                        status_event_id=str(raw.get("status_event_id") or raw.get("id") or ""),
+                    )
+                )
+            except ValueError:
+                status_view, result = StatusFold().fold(object_id, [])
+                return status_view, result
+        return StatusFold().fold(object_id, events)

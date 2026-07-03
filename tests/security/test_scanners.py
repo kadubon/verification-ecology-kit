@@ -5,6 +5,7 @@ import tarfile
 import zipfile
 from pathlib import Path
 
+from verification_ecology_kit.audit.allowlist import load_allowlist
 from verification_ecology_kit.audit.local_info import scan_local_info
 from verification_ecology_kit.audit.security import (
     scan_secrets,
@@ -18,6 +19,46 @@ def test_secret_scanner_detects_token_like_value(tmp_path: Path) -> None:
     target.write_text("sk-" + "a" * 20, encoding="utf-8")
     report = scan_secrets(tmp_path)
     assert report.decision == "quarantine"
+    assert "a" * 20 not in report.to_json()
+
+
+def test_secret_scanner_uses_toml_allowlist(tmp_path: Path) -> None:
+    target = tmp_path / "secret.txt"
+    token = "github_pat_" + "A" * 30
+    target.write_text(token, encoding="utf-8")
+    allowlist = tmp_path / "allowlist.toml"
+    allowlist.write_text(
+        '[secrets]\nvalues = ["' + token + '"]\nregexes = []\npaths = []\n',
+        encoding="utf-8",
+    )
+    report = scan_secrets(tmp_path, allowlist_path=allowlist)
+    assert report.decision == "pass"
+
+
+def test_allowlist_loader_and_scanners_handle_paths_and_regexes(tmp_path: Path) -> None:
+    assert load_allowlist(tmp_path / "missing.toml") == {}
+
+    target = tmp_path / "allowed" / "secret.txt"
+    target.parent.mkdir()
+    target.write_text("npm_" + "A" * 30, encoding="utf-8")
+    allowlist = tmp_path / "allowlist.toml"
+    allowlist.write_text(
+        'local_info = "bad"\n'
+        "emails = []\n"
+        'paths = ["allowed"]\n'
+        "\n"
+        "[secrets]\n"
+        "values = []\n"
+        'regexes = ["^npm_"]\n'
+        "paths = []\n",
+        encoding="utf-8",
+    )
+
+    loaded = load_allowlist(allowlist)
+
+    assert loaded["local_info"] == ()
+    assert scan_secrets(tmp_path, allowlist_path=allowlist).decision == "pass"
+    assert scan_local_info(tmp_path, allowlist_path=allowlist).decision == "pass"
 
 
 def test_local_info_scanner_detects_local_path(tmp_path: Path) -> None:

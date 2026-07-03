@@ -338,7 +338,7 @@ Use this map when you need more detail than the README.
 Install development dependencies:
 
 ```bash
-uv sync --all-extras --dev
+uv sync --locked --all-extras --dev
 ```
 
 Run the main local checks:
@@ -384,11 +384,11 @@ If you find a security issue, see [SECURITY.md](SECURITY.md).
 
 ## Project Status
 
-Current version: `1.0.0`
+Current version: `1.1.0`
 
 Status:
 
-- first stable OSS implementation
+- stable OSS implementation with v1.1 semantic hardening
 - typed Python package
 - command line interface included
 - JSON schemas included
@@ -398,7 +398,7 @@ Status:
 - local package build and wheel smoke install pass
 - PyPI and GitHub release publication are performed after tagging
 
-Before treating the package as v1.0.0-ready, check:
+Before treating the current package as v1-ready, check:
 
 - [docs/v1_audit.md](docs/v1_audit.md)
 - [docs/v1_readiness.md](docs/v1_readiness.md)

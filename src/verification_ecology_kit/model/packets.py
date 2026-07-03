@@ -34,6 +34,10 @@ class PacketOrigin:
     created_from: OriginKind
     traces: list[str] = field(default_factory=list)
     lineage: list[str] = field(default_factory=list)
+    parent_packets: list[str] = field(default_factory=list)
+    inherited_residuals: list[str] = field(default_factory=list)
+    inherited_boundaries: list[str] = field(default_factory=list)
+    inherited_overclosure_exposures: list[str] = field(default_factory=list)
     unresolved_origin_residuals: list[str] = field(default_factory=list)
 
 
@@ -64,6 +68,8 @@ class VerifierProcedure:
     stochastic_methods: list[str] = field(default_factory=list)
     tool_dependencies: list[str] = field(default_factory=list)
     evaluator_versions: list[str] = field(default_factory=list)
+    counterexample_search: list[str] = field(default_factory=list)
+    boundary_checks: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -80,6 +86,7 @@ class BoundaryRefs:
     destructive_boundary_ref: str = ""
     narrowing_boundary_ref: str = ""
     reachability_certificate_refs: list[str] = field(default_factory=list)
+    inherited_boundary_refs: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -107,6 +114,38 @@ class CirculationStatus:
     visibility: Visibility = Visibility.PRIVATE
     trust_status: TrustStatus = TrustStatus.LOCAL
     local_internalization_status: str = "local"
+    quarantine_ref: str = ""
+    translation_residual_refs: list[str] = field(default_factory=list)
+    redaction_residual_refs: list[str] = field(default_factory=list)
+    boundary_check_refs: list[str] = field(default_factory=list)
+
+
+@dataclass
+class AntiOverclosure:
+    unknowns_to_preserve: list[str] = field(default_factory=list)
+    future_candidates_may_narrow: bool = False
+    question_forms_may_suppress: bool = False
+    schema_overclosure_residuals: list[str] = field(default_factory=list)
+    lineage_laundering_checks: list[str] = field(default_factory=list)
+
+
+@dataclass
+class EcologicalInvariants:
+    preserve_origin: bool = True
+    preserve_scope: bool = True
+    preserve_residuals: bool = True
+    preserve_boundaries: bool = True
+    preserve_counter_packet_route: bool = True
+    preserve_aperture: bool = True
+
+
+@dataclass
+class ResidualLivenessPolicy:
+    owner: str = ""
+    deadline: str = ""
+    resource_quota: list[str] = field(default_factory=list)
+    recheck_trigger: str = ""
+    preserved_unknown_route: str = ""
 
 
 @dataclass
@@ -125,6 +164,9 @@ class VerifierPacket:
     extension: dict[str, Any] = field(default_factory=dict)
     residual_obligations: list[ResidualRecord] = field(default_factory=list)
     counter_packet_refs: list[str] = field(default_factory=list)
+    anti_overclosure: AntiOverclosure = field(default_factory=AntiOverclosure)
+    ecological_invariants: EcologicalInvariants = field(default_factory=EcologicalInvariants)
+    residual_liveness: ResidualLivenessPolicy = field(default_factory=ResidualLivenessPolicy)
 
     @classmethod
     def minimal(
@@ -184,8 +226,75 @@ class VerifierPacket:
                 created.append(residual)
         return created
 
+    def ensure_semantic_accountability(self) -> list[ResidualRecord]:
+        created: list[ResidualRecord] = []
+        if not self.anti_overclosure.unknowns_to_preserve:
+            created.append(
+                self._ensure_residual_once(
+                    kind=ResidualKind.SCHEMA_OVERCLOSURE,
+                    scope=("anti_overclosure", "unknowns_to_preserve"),
+                    obligation=(
+                        "Declare unknowns to preserve or keep anti-overclosure residual live"
+                    ),
+                    exposure="blocks_open_ended_authority",
+                )
+            )
+        if not self.anti_overclosure.lineage_laundering_checks:
+            created.append(
+                self._ensure_residual_once(
+                    kind=ResidualKind.UNRESOLVED,
+                    scope=("anti_overclosure", "lineage_laundering"),
+                    obligation="Declare lineage-laundering check or keep residual live",
+                    exposure="blocks_support",
+                )
+            )
+        if not self.residual_liveness.owner or not self.residual_liveness.recheck_trigger:
+            created.append(
+                self._ensure_residual_once(
+                    kind=ResidualKind.LIVENESS_DEBT,
+                    scope=("residual_liveness",),
+                    obligation="Assign residual owner, deadline, quota, and recheck trigger",
+                    exposure="blocks_support",
+                )
+            )
+        if self.update_profile is None or not self.update_profile.retirement_conditions:
+            created.append(
+                self._ensure_residual_once(
+                    kind=ResidualKind.UNRESOLVED,
+                    scope=("repair_and_retirement", "retirement_conditions"),
+                    obligation="Declare retirement conditions or residualize retirement liveness",
+                    exposure="blocks_support",
+                )
+            )
+        return [residual for residual in created if residual is not None]
+
+    def _ensure_residual_once(
+        self,
+        *,
+        kind: ResidualKind,
+        scope: tuple[str, ...],
+        obligation: str,
+        exposure: str,
+    ) -> ResidualRecord:
+        for residual in self.residual_obligations:
+            if residual.kind == kind and residual.scope == scope:
+                return residual
+        residual = ResidualRecord(
+            kind=kind,
+            origin=self.packet_id,
+            scope=scope,
+            obligation=obligation,
+            exposure=exposure,
+        )
+        self.residual_obligations.append(residual)
+        if self.residual_hooks is None:
+            self.residual_hooks = ResidualHooks()
+        self.residual_hooks.unresolved_residual_refs.append(residual.residual_id)
+        return residual
+
     def validate(self) -> list[CheckResult]:
         created = self.ensure_core_accountability()
+        semantic_created = self.ensure_semantic_accountability()
         missing = self.missing_core_fields()
         results: list[CheckResult] = []
         if missing:
@@ -199,6 +308,19 @@ class VerifierPacket:
             )
         else:
             results.append(pass_result("PacketCoreAccountability", evidence_refs=(self.packet_id,)))
+        if semantic_created:
+            results.append(
+                residual_result(
+                    "PacketSemanticAccountability",
+                    FailureCode.OVERCLOSURE_RISK,
+                    residual_refs=tuple(residual.residual_id for residual in semantic_created),
+                    suggested_repair_hooks=(
+                        "declare_anti_overclosure_invariants_and_residual_liveness",
+                    ),
+                )
+            )
+        else:
+            results.append(pass_result("PacketSemanticAccountability"))
         if not self.counter_packet_refs:
             residual = ResidualRecord(
                 kind=ResidualKind.MISSING_COUNTER,
@@ -287,6 +409,50 @@ class CounterPacket(VerifierPacket):
                     target.packet_id,
                     "scope inflation through unvalidated assumptions",
                     ResidualKind.UNRESOLVED,
+                )
+            )
+        if not target.anti_overclosure.unknowns_to_preserve:
+            findings.append(
+                CounterPacketFinding(
+                    target.packet_id,
+                    "unknown erasure or missing unknown-preservation declaration",
+                    ResidualKind.SCHEMA_OVERCLOSURE,
+                )
+            )
+        if target.anti_overclosure.future_candidates_may_narrow:
+            findings.append(
+                CounterPacketFinding(
+                    target.packet_id,
+                    "aperture narrowing risk from future candidate suppression",
+                    ResidualKind.APERTURE_DEBT,
+                )
+            )
+        if not target.update_profile or not target.update_profile.retirement_conditions:
+            findings.append(
+                CounterPacketFinding(
+                    target.packet_id,
+                    "missing retirement conditions",
+                    ResidualKind.LIVENESS_DEBT,
+                )
+            )
+        if (
+            target.circulation_status
+            and target.circulation_status.trust_status != TrustStatus.LOCAL
+            and not target.circulation_status.translation_residual_refs
+        ):
+            findings.append(
+                CounterPacketFinding(
+                    target.packet_id,
+                    "missing translation residuals for non-local packet",
+                    ResidualKind.TRANSLATION_RESIDUAL,
+                )
+            )
+        if target.origin and target.origin.parent_packets and not target.origin.lineage:
+            findings.append(
+                CounterPacketFinding(
+                    target.packet_id,
+                    "lineage laundering through hidden parent packets",
+                    ResidualKind.CONFLICT_RESIDUAL,
                 )
             )
         return findings

@@ -20,7 +20,7 @@ jobs:
       - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
         with:
           enable-cache: false
-      - run: uv sync --all-extras --dev
+      - run: uv sync --locked --all-extras --dev
       - run: uv run ruff format --check .
       - run: uv run ruff check .
 
@@ -33,7 +33,7 @@ jobs:
       - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
         with:
           enable-cache: false
-      - run: uv sync --all-extras --dev
+      - run: uv sync --locked --all-extras --dev
       - run: uv run mypy src
 
   test:
@@ -51,7 +51,7 @@ jobs:
       - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
         with:
           enable-cache: false
-      - run: uv sync --all-extras --dev
+      - run: uv sync --locked --all-extras --dev
       - run: uv run pytest tests/unit tests/integration tests/security --cov=verification_ecology_kit --cov-report=term-missing
 
   property-test:
@@ -63,7 +63,7 @@ jobs:
       - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
         with:
           enable-cache: false
-      - run: uv sync --all-extras --dev
+      - run: uv sync --locked --all-extras --dev
       - run: uv run pytest tests/property --no-cov
 
   schema-check:
@@ -75,7 +75,7 @@ jobs:
       - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
         with:
           enable-cache: false
-      - run: uv sync --all-extras --dev
+      - run: uv sync --locked --all-extras --dev
       - run: uv run check-jsonschema --check-metaschema src/verification_ecology_kit/schemas/*.schema.json
 
   security:
@@ -87,7 +87,7 @@ jobs:
       - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
         with:
           enable-cache: false
-      - run: uv sync --all-extras --dev
+      - run: uv sync --locked --all-extras --dev
       - run: uv run bandit -c pyproject.toml -r src scripts
       - run: uv run pip-audit
       - run: uv run python scripts/verify_no_secrets.py .
@@ -103,7 +103,7 @@ jobs:
       - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
         with:
           enable-cache: false
-      - run: uv sync --all-extras --dev
+      - run: uv sync --locked --all-extras --dev
       - run: uv run python scripts/generate_schema_docs.py
       - run: uv run python scripts/generate_theory_mapping.py
       - run: uv run mkdocs build --strict
@@ -118,7 +118,7 @@ jobs:
       - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
         with:
           enable-cache: false
-      - run: uv sync --all-extras --dev
+      - run: uv sync --locked --all-extras --dev
       - run: uv run python scripts/check_v1_readiness.py --strict
       - run: uv build --no-sources
       - run: uv run python scripts/verify_package_contents.py
@@ -143,7 +143,7 @@ jobs:
       - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
         with:
           enable-cache: false
-      - run: uv sync --all-extras --dev
+      - run: uv sync --locked --all-extras --dev
       - run: uv run python scripts/verify_no_secrets.py .
       - run: uv run python scripts/scan_local_info.py .
       - run: uv build --no-sources

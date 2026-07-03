@@ -182,6 +182,12 @@ def resolve_pointer(document: Any, pointer: str) -> Any:
             current = current[part]
             continue
         if isinstance(current, list):
+            if part == "-" or part.startswith("-") or (len(part) > 1 and part.startswith("0")):
+                raise VEKError(
+                    ErrorCode.UNRESOLVED_REFERENCE,
+                    "JSON Pointer array index must be a non-negative integer without leading zeros",
+                    details={"pointer": pointer, "index": part},
+                )
             try:
                 index = int(part)
             except ValueError as exc:

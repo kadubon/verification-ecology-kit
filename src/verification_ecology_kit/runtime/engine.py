@@ -50,11 +50,51 @@ class RuntimeEngine:
         ]
         for residual in active_residuals:
             for packet in self.generator.from_residual(residual):
-                packet.ensure_core_accountability()
+                report.generated_from_residuals.append(
+                    f"{residual.residual_id}->{packet.packet_id}"
+                )
+                created_core = packet.ensure_core_accountability()
+                created_semantic = packet.ensure_semantic_accountability()
+                report.inherited_residual_refs.extend(
+                    packet.origin.inherited_residuals if packet.origin else ()
+                )
+                report.inherited_boundary_refs.extend(
+                    packet.boundary_refs.inherited_boundary_refs if packet.boundary_refs else ()
+                )
+                report.anti_overclosure_gaps.extend(
+                    item.residual_id
+                    for item in created_semantic
+                    if "anti_overclosure" in item.scope
+                )
+                packet.validate()
+                report.counter_packet_obligations.extend(
+                    item.residual_id
+                    for item in packet.residual_obligations
+                    if item.kind == ResidualKind.MISSING_COUNTER
+                )
+                report.schema_checks.append(
+                    "pass" if not created_core else f"residualized:{packet.packet_id}"
+                )
+                report.lineage_checks.append(
+                    "pass"
+                    if packet.origin and (packet.origin.traces or packet.origin.parent_packets)
+                    else f"residualized:{packet.packet_id}"
+                )
+                report.reachability_checks.append(
+                    "pass"
+                    if packet.boundary_refs and packet.boundary_refs.reachability_certificate_refs
+                    else f"residualized:{packet.packet_id}"
+                )
+                report.repair_or_retire_decisions.append(
+                    "pass"
+                    if packet.update_profile and packet.update_profile.retirement_conditions
+                    else f"residualized:{packet.packet_id}"
+                )
                 if self.policy.should_quarantine(packet):
                     if packet.circulation_status is not None:
                         packet.circulation_status.visibility = Visibility.QUARANTINED
                     report.quarantined_packets.append(packet.packet_id)
+                    report.quarantine_decisions.append(f"quarantine:{packet.packet_id}")
                     aperture_debt = ResidualRecord(
                         kind=ResidualKind.APERTURE_DEBT,
                         origin=packet.packet_id,
@@ -64,6 +104,11 @@ class RuntimeEngine:
                     )
                     state.residual_ledger.add(aperture_debt, justification="runtime aperture debt")
                     report.aperture_debts.append(aperture_debt.residual_id)
+                    report.aperture_updates.append(aperture_debt.residual_id)
+                else:
+                    report.quarantine_decisions.append(f"allow:{packet.packet_id}")
+                    report.aperture_updates.append(f"unchanged:{packet.packet_id}")
+                report.frontier_updates.append(f"routed:{residual.residual_id}")
                 state.add_packet(packet)
                 report.generated_packets.append(packet.packet_id)
             report.residuals_routed.append(residual.residual_id)

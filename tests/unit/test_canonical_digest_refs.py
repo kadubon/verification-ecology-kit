@@ -46,6 +46,14 @@ def test_json_pointer_resolution() -> None:
     assert resolve_pointer(document, "/a/b~1c/1") == 20
 
 
+def test_json_pointer_rejects_negative_and_leading_zero_indices() -> None:
+    document = {"items": ["a", "b"]}
+    for pointer in ("/items/-1", "/items/01", "/items/-"):
+        with pytest.raises(VEKError) as exc:
+            resolve_pointer(document, pointer)
+        assert exc.value.code == ErrorCode.UNRESOLVED_REFERENCE
+
+
 def test_reference_resolver_detects_digest_mismatch() -> None:
     envelope = ObjectEnvelope("o1", "schema", "1.0", {"x": 1})
     envelope.refresh_digest()

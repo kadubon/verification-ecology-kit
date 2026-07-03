@@ -78,6 +78,14 @@ class AuthorityDecision:
     sandbox_status: str = "not_applicable"
     sandbox_waiver_residuals: tuple[str, ...] = ()
     residual_gates: tuple[str, ...] = ()
+    support_statuses: dict[str, LifecycleStatus] | None = None
+    migrated_without_witness_refs: tuple[str, ...] = ()
+    digest_mismatched_support_refs: tuple[str, ...] = ()
+    unresolved_support_refs: tuple[str, ...] = ()
+    counterexample_challenged_refs: tuple[str, ...] = ()
+    expired_cex_closed_refs: tuple[str, ...] = ()
+    non_live_soundgap_refs: tuple[str, ...] = ()
+    expiry_state: str = "not_expired"
     ledger_event_refs: tuple[str, ...] = ()
     provenance: tuple[str, ...] = ()
 
@@ -95,6 +103,11 @@ class AuthorityEngine:
         stale_or_unknown_support_refs: tuple[str, ...] = (),
         counterexample_challenged_refs: tuple[str, ...] = (),
         residual_gates_blocking: tuple[str, ...] = (),
+        migrated_without_witness_refs: tuple[str, ...] = (),
+        digest_mismatched_support_refs: tuple[str, ...] = (),
+        unresolved_support_refs: tuple[str, ...] = (),
+        expired_cex_closed_refs: tuple[str, ...] = (),
+        non_live_soundgap_refs: tuple[str, ...] = (),
     ) -> tuple[AuthorityDecisionValue, CheckResult]:
         active = [
             decision
@@ -107,17 +120,21 @@ class AuthorityEngine:
                 FailureCode.AUTHORITY_MISMATCH,
                 suggested_repair_hooks=("create_active_authority_decision",),
             )
-        if (
+        blocking_refs = (
             stale_or_unknown_support_refs
-            or counterexample_challenged_refs
-            or residual_gates_blocking
-        ):
+            + migrated_without_witness_refs
+            + digest_mismatched_support_refs
+            + unresolved_support_refs
+            + counterexample_challenged_refs
+            + expired_cex_closed_refs
+            + non_live_soundgap_refs
+            + residual_gates_blocking
+        )
+        if blocking_refs:
             return AuthorityDecisionValue.DENY, fail_result(
                 "AuthorityOK",
                 FailureCode.AUTHORITY_MISMATCH,
-                residual_refs=stale_or_unknown_support_refs
-                + counterexample_challenged_refs
-                + residual_gates_blocking,
+                residual_refs=blocking_refs,
             )
         best = max(active, key=lambda item: DECISION_PRECEDENCE[item.decision])
         if best.decision != AuthorityDecisionValue.ALLOW:
@@ -137,6 +154,13 @@ class AuthorityEngine:
                     f"add_required_support:{ref}" for ref in sorted(missing_support)
                 ),
             )
+        decision_blockers = self._decision_blockers(best)
+        if decision_blockers:
+            return AuthorityDecisionValue.DENY, fail_result(
+                "AuthorityOK",
+                FailureCode.AUTHORITY_MISMATCH,
+                residual_refs=decision_blockers,
+            )
         if best.sandbox_required and best.sandbox_status != "active":
             return AuthorityDecisionValue.DENY, fail_result(
                 "AuthorityOK", FailureCode.AUTHORITY_MISMATCH
@@ -145,3 +169,27 @@ class AuthorityEngine:
             "AuthorityOK",
             evidence_refs=(best.authority_decision_id,),
         )
+
+    def _decision_blockers(self, decision: AuthorityDecision) -> tuple[str, ...]:
+        refs: list[str] = []
+        if decision.support_statuses:
+            refs.extend(
+                ref
+                for ref, status in decision.support_statuses.items()
+                if status
+                in {LifecycleStatus.STALE, LifecycleStatus.REVOKED, LifecycleStatus.UNKNOWN}
+            )
+        refs.extend(decision.migrated_without_witness_refs)
+        refs.extend(decision.digest_mismatched_support_refs)
+        refs.extend(decision.unresolved_support_refs)
+        refs.extend(decision.counterexample_challenged_refs)
+        refs.extend(decision.expired_cex_closed_refs)
+        refs.extend(decision.non_live_soundgap_refs)
+        refs.extend(decision.residual_gates)
+        if decision.scope_action_match == "fail":
+            refs.append("scope_action_mismatch")
+        if decision.sandbox_required and decision.sandbox_status != "active":
+            refs.append("sandbox_inactive")
+        if decision.expiry_state == "expired":
+            refs.append("authority_expired")
+        return tuple(dict.fromkeys(refs))

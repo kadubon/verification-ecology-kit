@@ -9,14 +9,15 @@ stable public claim.
 | --- | --- | --- |
 | Development | The package installs locally and the changed feature has targeted tests. | Merging ordinary changes. |
 | Public snapshot | Core lint, type, test, docs, schema, package, and security checks pass. | Publishing a non-stable package or tag. |
-| V1 candidate | All readiness gaps are either closed or documented as release-blocking residuals. | Creating a `1.0.0rc` candidate. |
-| V1 stable | The readiness script passes in strict mode and the package no longer carries alpha status. | Publishing `1.0.0`. |
+| V1 candidate | All readiness gaps are either closed or documented as release-blocking residuals. | Creating a v1 release candidate. |
+| V1 stable | The readiness script passes in strict mode and the package no longer carries alpha status. | Publishing a v1 stable release. |
 
 ## Standard Local Gate
 
 Run this before shipping an ordinary change:
 
 ```bash
+uv sync --locked --all-extras --dev
 uv run ruff format --check .
 uv run ruff check .
 uv run mypy src
@@ -42,7 +43,7 @@ uv run python scripts/smoke_install_wheel.py
 
 ## V1 Gate
 
-Run this before a `1.0.0` release:
+Run this before a v1 release:
 
 ```bash
 uv run python scripts/check_v1_readiness.py --strict
@@ -57,7 +58,7 @@ for the full test and security gate; it is the release-readiness summary.
 When a gate fails, do one of the following:
 
 - fix the issue and rerun the same gate
-- document the issue as a residual obligation and keep the version below `1.0.0`
+- document the issue as a residual obligation and keep the stable version claim below the affected release
 - publish only a release candidate if the remaining gap is known and visible
 
 Do not hide a failed gate by changing the command, lowering a threshold, or

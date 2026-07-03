@@ -1,11 +1,11 @@
 # Release Readiness
 
 This page records the release-readiness contract for `verification-ecology-kit`
-`1.0.0`.
+`1.1.0`.
 
 ## Current Decision
 
-`ready_for_v1.0.0: true` for local release artifacts when all commands in the
+`ready_for_v1.1.0: true` for local release artifacts when all commands in the
 gate below pass on the current worktree.
 
 The release decision is operational, not theorem-level. The package implements
@@ -57,7 +57,7 @@ Do not publish a stable release if any of the following are true:
 - Any required schema listed in that script is missing.
 - `tests/golden/theory_coverage.expected.json` contains `partial` or
   `not_implemented`.
-- README, pyproject metadata, or CHANGELOG contradict the `1.0.0` claim.
+- README, pyproject metadata, or CHANGELOG contradict the current v1 claim.
 - The package artifact contains local paths, private files, notebooks,
   generated PDFs, TeX build artifacts, `.env` files, private keys, or hidden
   scratch files.
@@ -67,7 +67,7 @@ Do not publish a stable release if any of the following are true:
 
 The local release artifact evidence is:
 
-- `dist/verification_ecology_kit-1.0.0.tar.gz`
-- `dist/verification_ecology_kit-1.0.0-py3-none-any.whl`
+- `dist/verification_ecology_kit-1.1.0.tar.gz`
+- `dist/verification_ecology_kit-1.1.0-py3-none-any.whl`
 - package contents audit decision: `pass`
-- smoke install version: `1.0.0`
+- smoke install version: `1.1.0`

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0
+
+- Added executable semantic readiness gates for operational empty bundles, strict JSON Pointer indices, authority denial paths, packet operation admissibility, runtime reporting, and scanner redaction.
+- Expanded verifier packet schemas and loaders for lineage, anti-overclosure, ecological invariants, residual liveness, circulation residuals, and inherited boundary metadata.
+- Hardened conformance, authority, packet operation, runtime, residual ledger, and reference resolution behavior against silent support loss.
+- Added TOML allowlist support and broader token detection for local secret scanning.
+- Updated CI and release documentation to use locked dependency sync.
+
 ## 1.0.0
 
 - Stabilized the package metadata and public version for the first stable OSS release.

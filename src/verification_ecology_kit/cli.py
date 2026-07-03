@@ -29,12 +29,15 @@ from verification_ecology_kit.model.conformance import ConformanceEngine, VetBun
 from verification_ecology_kit.model.ecology_state import VerifierEcologyState
 from verification_ecology_kit.model.ledger import LedgerEvent, ResidualLedger
 from verification_ecology_kit.model.packets import (
+    AntiOverclosure,
     BoundaryRefs,
     CertificationCondition,
     CirculationStatus,
+    EcologicalInvariants,
     PacketOrigin,
     PacketScope,
     ResidualHooks,
+    ResidualLivenessPolicy,
     TransformationClass,
     UpdateProfile,
     VerifierPacket,
@@ -540,6 +543,15 @@ def _packet_from_json(data: Any) -> VerifierPacket:
             _residual_from_json(item) for item in data.get("residual_obligations", [])
         ],
         counter_packet_refs=_string_list(data.get("counter_packet_refs")),
+        anti_overclosure=_anti_overclosure_from_json(
+            _optional_dict(data.get("anti_overclosure"), name="anti_overclosure")
+        ),
+        ecological_invariants=_ecological_invariants_from_json(
+            _optional_dict(data.get("ecological_invariants"), name="ecological_invariants")
+        ),
+        residual_liveness=_residual_liveness_from_json(
+            _optional_dict(data.get("residual_liveness"), name="residual_liveness")
+        ),
     )
     packet.ensure_core_accountability()
     return packet
@@ -552,6 +564,10 @@ def _origin_from_json(data: dict[str, Any] | None) -> PacketOrigin | None:
         created_from=OriginKind(str(data.get("created_from", OriginKind.HUMAN_SPECIFICATION))),
         traces=_string_list(data.get("traces")),
         lineage=_string_list(data.get("lineage")),
+        parent_packets=_string_list(data.get("parent_packets")),
+        inherited_residuals=_string_list(data.get("inherited_residuals")),
+        inherited_boundaries=_string_list(data.get("inherited_boundaries")),
+        inherited_overclosure_exposures=_string_list(data.get("inherited_overclosure_exposures")),
         unresolved_origin_residuals=_string_list(data.get("unresolved_origin_residuals")),
     )
 
@@ -591,6 +607,8 @@ def _procedure_from_json(data: dict[str, Any] | None) -> VerifierProcedure | Non
         stochastic_methods=_string_list(data.get("stochastic_methods")),
         tool_dependencies=_string_list(data.get("tool_dependencies")),
         evaluator_versions=_string_list(data.get("evaluator_versions")),
+        counterexample_search=_string_list(data.get("counterexample_search")),
+        boundary_checks=_string_list(data.get("boundary_checks")),
     )
 
 
@@ -615,6 +633,7 @@ def _boundary_refs_from_json(data: dict[str, Any] | None) -> BoundaryRefs | None
         destructive_boundary_ref=str(data.get("destructive_boundary_ref", "")),
         narrowing_boundary_ref=str(data.get("narrowing_boundary_ref", "")),
         reachability_certificate_refs=_string_list(data.get("reachability_certificate_refs")),
+        inherited_boundary_refs=_string_list(data.get("inherited_boundary_refs")),
     )
 
 
@@ -651,6 +670,47 @@ def _circulation_status_from_json(data: dict[str, Any] | None) -> CirculationSta
         visibility=Visibility(str(data.get("visibility", Visibility.PRIVATE))),
         trust_status=TrustStatus(str(data.get("trust_status", TrustStatus.LOCAL))),
         local_internalization_status=str(data.get("local_internalization_status", "local")),
+        quarantine_ref=str(data.get("quarantine_ref", "")),
+        translation_residual_refs=_string_list(data.get("translation_residual_refs")),
+        redaction_residual_refs=_string_list(data.get("redaction_residual_refs")),
+        boundary_check_refs=_string_list(data.get("boundary_check_refs")),
+    )
+
+
+def _anti_overclosure_from_json(data: dict[str, Any] | None) -> AntiOverclosure:
+    if data is None:
+        return AntiOverclosure()
+    return AntiOverclosure(
+        unknowns_to_preserve=_string_list(data.get("unknowns_to_preserve")),
+        future_candidates_may_narrow=bool(data.get("future_candidates_may_narrow", False)),
+        question_forms_may_suppress=bool(data.get("question_forms_may_suppress", False)),
+        schema_overclosure_residuals=_string_list(data.get("schema_overclosure_residuals")),
+        lineage_laundering_checks=_string_list(data.get("lineage_laundering_checks")),
+    )
+
+
+def _ecological_invariants_from_json(data: dict[str, Any] | None) -> EcologicalInvariants:
+    if data is None:
+        return EcologicalInvariants()
+    return EcologicalInvariants(
+        preserve_origin=bool(data.get("preserve_origin", True)),
+        preserve_scope=bool(data.get("preserve_scope", True)),
+        preserve_residuals=bool(data.get("preserve_residuals", True)),
+        preserve_boundaries=bool(data.get("preserve_boundaries", True)),
+        preserve_counter_packet_route=bool(data.get("preserve_counter_packet_route", True)),
+        preserve_aperture=bool(data.get("preserve_aperture", True)),
+    )
+
+
+def _residual_liveness_from_json(data: dict[str, Any] | None) -> ResidualLivenessPolicy:
+    if data is None:
+        return ResidualLivenessPolicy()
+    return ResidualLivenessPolicy(
+        owner=str(data.get("owner", "")),
+        deadline=str(data.get("deadline", "")),
+        resource_quota=_string_list(data.get("resource_quota")),
+        recheck_trigger=str(data.get("recheck_trigger", "")),
+        preserved_unknown_route=str(data.get("preserved_unknown_route", "")),
     )
 
 

@@ -33,6 +33,20 @@
     "sandbox_status": { "type": "string" },
     "sandbox_waiver_residuals": { "type": "array", "items": { "type": "string" } },
     "residual_gates": { "type": "array", "items": { "type": "string" } },
+    "support_statuses": {
+      "type": ["object", "null"],
+      "additionalProperties": {
+        "type": "string",
+        "enum": ["active", "stale", "revoked", "migrated", "unknown"]
+      }
+    },
+    "migrated_without_witness_refs": { "type": "array", "items": { "type": "string" } },
+    "digest_mismatched_support_refs": { "type": "array", "items": { "type": "string" } },
+    "unresolved_support_refs": { "type": "array", "items": { "type": "string" } },
+    "counterexample_challenged_refs": { "type": "array", "items": { "type": "string" } },
+    "expired_cex_closed_refs": { "type": "array", "items": { "type": "string" } },
+    "non_live_soundgap_refs": { "type": "array", "items": { "type": "string" } },
+    "expiry_state": { "type": "string" },
     "ledger_event_refs": { "type": "array", "items": { "type": "string" } },
     "provenance": { "type": "array", "items": { "type": "string" } }
   },
@@ -67,6 +81,14 @@
     "sandbox_status",
     "sandbox_waiver_residuals",
     "residual_gates",
+    "support_statuses",
+    "migrated_without_witness_refs",
+    "digest_mismatched_support_refs",
+    "unresolved_support_refs",
+    "counterexample_challenged_refs",
+    "expired_cex_closed_refs",
+    "non_live_soundgap_refs",
+    "expiry_state",
     "ledger_event_refs",
     "provenance"
   ],

@@ -19,11 +19,11 @@ CI runs:
 - `pip-audit`
 - `zizmor` where available
 
-The scanners look for token-like values, private key markers, cloud credential markers, environment files, local machine paths, private email-like values, TeX build artifacts, notebook checkpoints, and private allowlists.
+The scanners look for token-like values, private key markers, cloud credential markers, environment files, local machine paths, private email-like values, TeX build artifacts, notebook checkpoints, and private allowlists. Local exceptions must be listed in `security/allowlist.toml`; scan reports redact detected token values instead of printing them.
 
 ## GitHub Actions Residual Risk
 
-The workflow uses stable version tags for third-party actions instead of full commit SHA pinning. This is documented as a residual supply-chain risk. The workflow includes action auditing with `zizmor` where available, read-only root permissions, no `pull_request_target`, and Trusted Publishing through OIDC instead of PyPI token secrets.
+The workflow pins third-party GitHub Actions to immutable commit SHAs where they are used. The workflow also includes action auditing with `zizmor` where available, read-only root permissions, no `pull_request_target`, locked dependency sync, and Trusted Publishing through OIDC instead of PyPI token secrets.
 
 ## PyPI Trusted Publishing
 

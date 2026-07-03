@@ -28,6 +28,18 @@ class DefaultPacketGenerator(PacketGenerator):
 @dataclass
 class RuntimeReport:
     generated_packets: list[str] = field(default_factory=list)
+    generated_from_residuals: list[str] = field(default_factory=list)
+    inherited_residual_refs: list[str] = field(default_factory=list)
+    inherited_boundary_refs: list[str] = field(default_factory=list)
+    anti_overclosure_gaps: list[str] = field(default_factory=list)
+    counter_packet_obligations: list[str] = field(default_factory=list)
+    quarantine_decisions: list[str] = field(default_factory=list)
+    reachability_checks: list[str] = field(default_factory=list)
+    schema_checks: list[str] = field(default_factory=list)
+    lineage_checks: list[str] = field(default_factory=list)
+    repair_or_retire_decisions: list[str] = field(default_factory=list)
+    frontier_updates: list[str] = field(default_factory=list)
+    aperture_updates: list[str] = field(default_factory=list)
     quarantined_packets: list[str] = field(default_factory=list)
     residuals_routed: list[str] = field(default_factory=list)
     aperture_debts: list[str] = field(default_factory=list)
@@ -37,6 +49,18 @@ class RuntimeReport:
     def to_dict(self) -> dict[str, object]:
         return {
             "generated_packets": self.generated_packets,
+            "generated_from_residuals": self.generated_from_residuals,
+            "inherited_residual_refs": self.inherited_residual_refs,
+            "inherited_boundary_refs": self.inherited_boundary_refs,
+            "anti_overclosure_gaps": self.anti_overclosure_gaps,
+            "counter_packet_obligations": self.counter_packet_obligations,
+            "quarantine_decisions": self.quarantine_decisions,
+            "reachability_checks": self.reachability_checks,
+            "schema_checks": self.schema_checks,
+            "lineage_checks": self.lineage_checks,
+            "repair_or_retire_decisions": self.repair_or_retire_decisions,
+            "frontier_updates": self.frontier_updates,
+            "aperture_updates": self.aperture_updates,
             "quarantined_packets": self.quarantined_packets,
             "residuals_routed": self.residuals_routed,
             "aperture_debts": self.aperture_debts,

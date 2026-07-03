@@ -195,7 +195,25 @@ class ResidualLedger:
     def trace_ok(self) -> CheckResult:
         previous_digest = ""
         for index, event in enumerate(self.events):
+            if event.post_state_digest == event.pre_state_digest:
+                return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
+            if index > 0 and event.predecessor_event_id != self.events[index - 1].event_id:
+                return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
+            missing_sources = [
+                residual_id
+                for residual_id in event.source_residuals
+                if residual_id not in self.residuals
+            ]
+            missing_targets = [
+                residual_id
+                for residual_id in event.target_residuals
+                if residual_id not in self.residuals
+            ]
+            if missing_sources or missing_targets:
+                return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
             if index == 0:
+                if event.pre_state_digest and event.predecessor_event_id is not None:
+                    return fail_result("TraceOK", FailureCode.CANONICALIZATION_DRIFT)
                 previous_digest = event.post_state_digest
                 continue
             if event.pre_state_digest != previous_digest:

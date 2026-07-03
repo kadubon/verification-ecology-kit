@@ -8,10 +8,16 @@
     "conformance_profile": { "type": "string", "enum": ["core", "operational", "federated"] },
     "objects": { "type": "array", "items": { "$ref": "vet-object-envelope.schema.json" } },
     "references": { "type": "array", "items": { "$ref": "vet-object-ref.schema.json" } },
-    "schema_catalogue": { "type": "object" },
+    "schema_catalogue": { "$ref": "schema-catalogue.schema.json" },
     "residual_ledger": { "$ref": "residual-ledger.schema.json" },
-    "authority_decisions": { "type": "array" },
-    "judgment_records": { "type": "array" },
+    "authority_decisions": {
+      "type": "array",
+      "items": { "$ref": "authority-decision.schema.json" }
+    },
+    "judgment_records": {
+      "type": "array",
+      "items": { "$ref": "judgment-record.schema.json" }
+    },
     "provenance": { "type": "array", "items": { "type": "string" } }
   },
   "required": [

@@ -10,7 +10,7 @@ vek packet create --template minimal
 Run local checks during development:
 
 ```bash
-uv sync --all-extras --dev
+uv sync --locked --all-extras --dev
 uv run pytest
 uv run ruff check .
 ```

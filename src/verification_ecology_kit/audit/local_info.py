@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from verification_ecology_kit.audit.allowlist import load_allowlist
 from verification_ecology_kit.audit.reports import AuditFinding, AuditReport
 
 LOCAL_PATH_PATTERNS: tuple[re.Pattern[str], ...] = (
@@ -14,14 +15,24 @@ LOCAL_PATH_PATTERNS: tuple[re.Pattern[str], ...] = (
 EMAIL_PATTERN = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)
 
 
-def scan_local_info(path: Path, *, allowlist: tuple[str, ...] = ()) -> AuditReport:
+def scan_local_info(
+    path: Path,
+    *,
+    allowlist: tuple[str, ...] = (),
+    allowlist_path: Path | None = None,
+) -> AuditReport:
     findings: list[AuditFinding] = []
+    loaded = load_allowlist(allowlist_path)
+    allowed_paths = allowlist + loaded.get("paths", ()) + loaded.get("local_info", ())
+    allowed_emails = allowlist + loaded.get("emails", ())
     for file_path in _iter_text_files(path):
+        if any(item in file_path.as_posix() for item in allowed_paths):
+            continue
         text = file_path.read_text(encoding="utf-8", errors="ignore")
         for pattern in LOCAL_PATH_PATTERNS:
             for match in pattern.finditer(text):
                 value = match.group(0)
-                if any(item in value for item in allowlist):
+                if any(item in value for item in allowed_paths):
                     continue
                 findings.append(
                     AuditFinding(
@@ -32,7 +43,7 @@ def scan_local_info(path: Path, *, allowlist: tuple[str, ...] = ()) -> AuditRepo
                 )
         for match in EMAIL_PATTERN.finditer(text):
             value = match.group(0)
-            if any(item in value for item in allowlist):
+            if any(item in value for item in allowed_emails):
                 continue
             findings.append(
                 AuditFinding(

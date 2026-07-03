@@ -3,3 +3,8 @@
 local_info = []
 emails = []
 paths = []
+
+[secrets]
+values = []
+regexes = []
+paths = []

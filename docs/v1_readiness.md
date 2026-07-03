@@ -1,17 +1,19 @@
 # V1 Readiness
 
-This page tracks whether the package is ready to be called `1.0.0`.
+This page tracks whether the package is ready to carry the v1 line, including
+the current `1.1.0` semantic-hardening release.
 
-The project may contain useful working features before that point. A `1.0.0`
+The project may contain useful working features before a stable v1 claim. A v1
 release requires a stronger claim: the command line interface, Python API,
-schemas, audits, examples, security checks, and documentation must all agree
-with the theory-facing contract.
+schemas, audits, examples, security checks, documentation, and semantic
+negative gates must all agree with the theory-facing contract.
 
 ## Current Release State
 
-Current package version: `1.0.0`
+Current package version: `1.1.0`
 
-Current readiness decision: **ready for `1.0.0` local release artifacts**.
+Current readiness decision: **ready for v1 local release artifacts when the
+strict gate passes on the current worktree**.
 
 The package is usable as a stable local OSS implementation. The readiness check
 is available as:
@@ -44,11 +46,12 @@ uv run python scripts/check_v1_readiness.py --strict
 | Examples | Runnable examples cover common workflows and failure cases. | Implemented as a v1 baseline; new domain examples can be added without changing the release contract. |
 | Tests | Unit, property, integration, golden, packaging, and security tests pass at the release threshold. | Implemented. The configured coverage gate is 92%. |
 | CI and release engineering | CI gates lint, types, tests, schemas, docs, security, package contents, and wheel smoke install. | Implemented as local and workflow-facing release gates. |
-| Version claim | The package must not claim `1.0.0` while readiness gaps remain. | Enforced by `scripts/check_v1_readiness.py --strict`. |
+| Version claim | The package must not claim stable v1 readiness while release gaps remain. | Enforced by `scripts/check_v1_readiness.py --strict`. |
+| Semantic gates | Critical theory claims must be backed by executable negative checks, not only file-presence checks. | Enforced by `scripts/check_v1_readiness.py --strict` and pytest. |
 
 ## Exit Criteria
 
-A `1.0.0` release candidate should satisfy all of the following:
+A v1 release candidate should satisfy all of the following:
 
 - `uv sync --locked --all-extras --dev`
 - `uv run ruff format --check .`
@@ -69,6 +72,6 @@ A `1.0.0` release candidate should satisfy all of the following:
 
 ## Release Rule
 
-Do not bump the package version to `1.0.0` while the readiness script reports
-gaps. If an urgent release is needed before every item is complete, publish a
-pre-1.0 version or a release candidate and keep the residual obligations visible.
+Do not bump the package version to a stable v1 release while the readiness
+script reports gaps. If an urgent release is needed before every item is
+complete, publish a release candidate and keep the residual obligations visible.

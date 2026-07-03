@@ -63,4 +63,9 @@ def test_runtime_generates_packet_from_residual() -> None:
     state.residual_ledger.add(residual)
     report = RuntimeEngine(store=store).run_once()
     assert report.generated_packets
+    assert report.generated_from_residuals
+    assert report.frontier_updates
+    assert report.aperture_updates
+    assert report.counter_packet_obligations
+    assert report.schema_checks
     assert store.load().packet_population

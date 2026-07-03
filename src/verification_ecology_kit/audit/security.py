@@ -7,34 +7,60 @@ import tarfile
 import zipfile
 from pathlib import Path
 
+from verification_ecology_kit.audit.allowlist import load_allowlist
 from verification_ecology_kit.audit.reports import AuditFinding, AuditReport
 
 TOKEN_PREFIXES = ("sk" + "-", "gh" + "p_", "gh" + "o_", "pypi" + "-")
 PRIVATE_KEY_MARKER = "BEGIN " + "PRIVATE KEY"
 AWS_ACCESS_KEY = "AK" + "IA"
+TOKEN_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    (
+        "token",
+        re.compile(
+            "(" + "|".join(re.escape(prefix) for prefix in TOKEN_PREFIXES) + r")[A-Za-z0-9_\-]{12,}"
+        ),
+    ),
+    ("github_pat", re.compile(r"(github" + r"_pat_)[A-Za-z0-9_]{22,}")),
+    ("github_token", re.compile(r"(gh" + r"[usro]_[A-Za-z0-9_]{16,})")),
+    ("npm_token", re.compile(r"(npm" + r"_[A-Za-z0-9_\-]{20,})")),
+    ("slack_token", re.compile(r"(xox" + r"[abprs]-[A-Za-z0-9\-]{20,})")),
+    ("google_api_key", re.compile(r"(AI" + r"za[0-9A-Za-z_\-]{20,})")),
+    ("cloud_credential", re.compile(r"((?:AK" + r"IA|ASIA)[A-Z0-9]{16})")),
+)
 
 
-def scan_secrets(path: Path) -> AuditReport:
+def scan_secrets(
+    path: Path,
+    *,
+    allowlist_path: Path | None = None,
+    allowlist: dict[str, tuple[str, ...]] | None = None,
+) -> AuditReport:
     findings: list[AuditFinding] = []
-    token_pattern = re.compile(
-        "(" + "|".join(re.escape(prefix) for prefix in TOKEN_PREFIXES) + r")[A-Za-z0-9_\-]{12,}"
-    )
+    allow = allowlist or load_allowlist(allowlist_path)
+    allowed_paths = allow.get("paths", ())
+    allowed_values = allow.get("secret_values", ())
+    allowed_regexes = tuple(re.compile(pattern) for pattern in allow.get("secret_regexes", ()))
     for file_path in _iter_text_files(path):
+        if _path_allowed(file_path, allowed_paths):
+            continue
         text = file_path.read_text(encoding="utf-8", errors="ignore")
         if PRIVATE_KEY_MARKER in text:
             findings.append(
                 AuditFinding("private_key", f"Private key marker in {file_path.as_posix()}", "high")
             )
-        if AWS_ACCESS_KEY in text:
-            findings.append(
-                AuditFinding(
-                    "cloud_credential", f"Cloud key marker in {file_path.as_posix()}", "high"
+        for code, pattern in TOKEN_PATTERNS:
+            for match in pattern.finditer(text):
+                value = match.group(0)
+                if _value_allowed(value, allowed_values, allowed_regexes):
+                    continue
+                findings.append(
+                    AuditFinding(
+                        code,
+                        f"{_redacted(value)} in {file_path.as_posix()}",
+                        "high",
+                        evidence_refs=(file_path.as_posix(),),
+                    )
                 )
-            )
-        if token_pattern.search(text):
-            findings.append(
-                AuditFinding("token", f"Token-like value in {file_path.as_posix()}", "high")
-            )
         if file_path.name.startswith(".env") and file_path.name != ".env.example":
             findings.append(
                 AuditFinding(
@@ -47,6 +73,24 @@ def scan_secrets(path: Path) -> AuditReport:
         findings=findings,
         support_blocking_failures=["secret_leak"] if findings else [],
     ).finalize()
+
+
+def _path_allowed(file_path: Path, allowed_paths: tuple[str, ...]) -> bool:
+    path_text = file_path.as_posix()
+    return any(item in path_text for item in allowed_paths)
+
+
+def _value_allowed(
+    value: str,
+    allowed_values: tuple[str, ...],
+    allowed_regexes: tuple[re.Pattern[str], ...],
+) -> bool:
+    return value in allowed_values or any(pattern.search(value) for pattern in allowed_regexes)
+
+
+def _redacted(value: str) -> str:
+    prefix = value.split("-", 1)[0] if "-" in value else value[:4]
+    return f"{prefix}[redacted]"
 
 
 def verify_package_paths(paths: list[Path]) -> AuditReport:
