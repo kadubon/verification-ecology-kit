@@ -54,9 +54,9 @@ TOKEN_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
 HIGH_ENTROPY_PATTERN = re.compile(r"\b[A-Za-z0-9_\-+/]{32,}\b")
 LOCAL_ABSOLUTE_PATH_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"[A-Za-z]:[\\/]+Users[\\/][^\s\"'<>]+", re.IGNORECASE),
-    re.compile(r"/mnt/[a-z]/Users/[^\s\"'<>]+", re.IGNORECASE),
-    re.compile(r"/home/[A-Za-z0-9._-]+/[^\s\"'<>]+"),
-    re.compile(r"/Users/[A-Za-z0-9._-]+/[^\s\"'<>]+"),
+    re.compile("/mnt/[a-z]/" + r"Users/[^\s\"'<>]+", re.IGNORECASE),
+    re.compile("/" + r"home/[A-Za-z0-9._-]+/[^\s\"'<>]+"),
+    re.compile("/" + r"Users/[A-Za-z0-9._-]+/[^\s\"'<>]+"),
 )
 
 

@@ -52,7 +52,7 @@ jobs:
         with:
           enable-cache: false
       - run: uv sync --locked --all-extras --dev
-      - run: uv run pytest tests/unit tests/integration tests/security --cov=verification_ecology_kit --cov-report=term-missing
+      - run: uv run pytest tests/unit tests/integration tests/security tests/formal --cov=verification_ecology_kit --cov-report=term-missing
 
   property-test:
     runs-on: ubuntu-latest
