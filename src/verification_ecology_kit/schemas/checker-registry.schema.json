@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/checker-registry.schema.json",
+  "type": "object",
+  "properties": {
+    "entries": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "checker_id": { "type": "string" },
+          "checker_type": { "type": "string" },
+          "checker_version": { "type": "string" },
+          "trust_basis": { "type": "array", "items": { "type": "string" } },
+          "status": { "type": "string", "enum": ["active", "stale", "revoked", "migrated", "unknown"] },
+          "sandbox_status": { "type": "string" },
+          "delegation_basis": { "type": "array", "items": { "type": "string" } },
+          "human_assessment_role": { "type": "string" },
+          "tool_assessment_role": { "type": "string" },
+          "invalidation_conditions": { "type": "array", "items": { "type": "string" } },
+          "recheck_trigger": { "type": "string" },
+          "acceptance_judgment_ref": { "type": "string" }
+        },
+        "required": [
+          "checker_id",
+          "checker_type",
+          "checker_version",
+          "trust_basis",
+          "status",
+          "sandbox_status",
+          "delegation_basis",
+          "human_assessment_role",
+          "tool_assessment_role",
+          "invalidation_conditions",
+          "recheck_trigger",
+          "acceptance_judgment_ref"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["entries"],
+  "additionalProperties": false
+}

@@ -239,6 +239,9 @@ def test_authority_judgment_runtime_and_ledger_branches(tmp_path: Path) -> None:
     assert policy.should_quarantine(packet)
 
     assert "json_store_snapshot" not in JsonStore(tmp_path / "missing.json").load().archive
+    raw_store = tmp_path / "raw-state.json"
+    raw_store.write_text('["legacy"]', encoding="utf-8")
+    assert JsonStore(raw_store).load().archive["json_store_snapshot"] == ["legacy"]
 
 
 def test_counterexample_channel_branches_and_error_to_dict() -> None:

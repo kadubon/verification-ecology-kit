@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/frontier-profile.schema.json",
+  "type": "object",
+  "properties": {
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "unknown_handle": { "type": "string" },
+          "transformation_class": { "type": "string" },
+          "packet_support": { "type": "array", "items": { "type": "string" } },
+          "residual_witnesses": { "type": "array", "items": { "type": "string" } },
+          "resource_bounds": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": [
+          "unknown_handle",
+          "transformation_class",
+          "packet_support",
+          "residual_witnesses",
+          "resource_bounds"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["entries"],
+  "additionalProperties": false
+}

@@ -194,7 +194,9 @@ def test_circulation_operations_json_store_and_policy(tmp_path: Path) -> None:
     state = VerifierEcologyState()
     state.add_packet(packet)
     store.save(state)
-    assert "json_store_snapshot" in store.load().archive
+    loaded = store.load()
+    assert packet.packet_id in loaded.packet_population
+    assert loaded.history.events
 
 
 def test_conformance_failure_branches_and_references() -> None:
@@ -302,3 +304,55 @@ def test_operation_wrapper_and_port_imports() -> None:
     import verification_ecology_kit.ports.reporter
 
     assert verification_ecology_kit.operations.compose.PacketOperationEngine
+    packet = VerifierPacket.minimal()
+    assert verification_ecology_kit.operations.fork.fork(packet).operation.value == "fork"
+    assert (
+        verification_ecology_kit.operations.specialize.specialize(
+            packet, scope="unit"
+        ).operation.value
+        == "specialize"
+    )
+    assert (
+        verification_ecology_kit.operations.generalize.generalize(packet).operation.value
+        == "generalize"
+    )
+    assert (
+        verification_ecology_kit.operations.compose.compose(
+            packet, VerifierPacket.minimal()
+        ).operation.value
+        == "compose"
+    )
+    assert (
+        verification_ecology_kit.operations.contrast.contrast(
+            packet, VerifierPacket.minimal()
+        ).operation.value
+        == "contrast"
+    )
+    assert (
+        verification_ecology_kit.operations.repair.repair(
+            packet, repair_note="unit"
+        ).operation.value
+        == "repair"
+    )
+    assert (
+        verification_ecology_kit.operations.retire.retire(packet, reason="unit").operation.value
+        == "retire"
+    )
+    assert (
+        verification_ecology_kit.operations.quarantine.quarantine(
+            packet, reason="unit"
+        ).operation.value
+        == "quarantine"
+    )
+    assert (
+        verification_ecology_kit.operations.internalize.internalize(
+            packet,
+            translated=True,
+            boundary_checked=True,
+        ).operation.value
+        == "internalize"
+    )
+    assert (
+        verification_ecology_kit.operations.redact.redact(packet, fields=("local",)).operation.value
+        == "redact"
+    )

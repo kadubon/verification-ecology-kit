@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/use-context.schema.json",
+  "type": "object",
+  "properties": {
+    "subject_ref": { "$ref": "vet-object-ref.schema.json" },
+    "subject_pointer": { "type": "string" },
+    "resolved_input_ref": { "$ref": "vet-object-ref.schema.json" },
+    "scope": { "type": "array", "items": { "type": "string" } },
+    "action": { "type": "string", "minLength": 1 },
+    "ledger_ref": { "type": "string" },
+    "policy_id": { "type": "string", "minLength": 1 },
+    "schema_version": { "type": "string", "minLength": 1 },
+    "digest_algorithm_id": { "type": "string", "minLength": 1 },
+    "canonical_input_ref": { "$ref": "vet-object-ref.schema.json" },
+    "input_digest": {
+      "type": "object",
+      "properties": {
+        "algorithm_id": { "type": "string" },
+        "value": { "type": "string" }
+      },
+      "required": ["algorithm_id", "value"],
+      "additionalProperties": false
+    },
+    "freshness_horizon": { "type": "string" },
+    "resource_bounds": { "type": "array", "items": { "type": "string" } },
+    "clock_context": { "type": "string" }
+  },
+  "required": [
+    "subject_ref",
+    "subject_pointer",
+    "resolved_input_ref",
+    "scope",
+    "action",
+    "ledger_ref",
+    "policy_id",
+    "schema_version",
+    "digest_algorithm_id",
+    "canonical_input_ref",
+    "input_digest",
+    "freshness_horizon",
+    "resource_bounds",
+    "clock_context"
+  ],
+  "additionalProperties": false
+}

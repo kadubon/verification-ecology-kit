@@ -1,0 +1,537 @@
+{
+  "schema_version": "1.0",
+  "status_vocabulary": ["implemented", "residualized", "not_applicable"],
+  "terms": [
+    {
+      "theory_term": "ObservableProcessHistory",
+      "module": "model/history.py",
+      "public_api": "ObservableProcessHistory",
+      "schema": "vet-bundle.schema.json",
+      "tests": ["tests/unit/test_history_ledger.py", "tests/property/test_properties.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "VerifierEcologyState",
+      "module": "model/ecology_state.py",
+      "public_api": "VerifierEcologyState",
+      "schema": "runtime-report.schema.json",
+      "tests": ["tests/unit/test_audits_runtime.py", "tests/unit/test_extended_models.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "TypeEnvironment",
+      "module": "model/records.py",
+      "public_api": "TypeEnvironment",
+      "schema": "schema-catalogue.schema.json",
+      "tests": ["tests/unit/test_records_lifecycle.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "TypedPartialRecord",
+      "module": "model/records.py",
+      "public_api": "TypedPartialRecord",
+      "schema": "schema-catalogue.schema.json",
+      "tests": ["tests/unit/test_records_lifecycle.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "ObservationSignature",
+      "module": "model/records.py",
+      "public_api": "ObservationSignature",
+      "schema": "schema-catalogue.schema.json",
+      "tests": ["tests/unit/test_records_lifecycle.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "ObjectEnvelope",
+      "module": "references.py",
+      "public_api": "ObjectEnvelope",
+      "schema": "vet-object-envelope.schema.json",
+      "tests": ["tests/unit/test_canonical_digest_refs.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "ObjectRef",
+      "module": "references.py",
+      "public_api": "ObjectRef",
+      "schema": "vet-object-ref.schema.json",
+      "tests": ["tests/unit/test_canonical_digest_refs.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "ReferenceEdge",
+      "module": "references.py",
+      "public_api": "ReferenceEdge",
+      "schema": "reference-edge.schema.json",
+      "tests": ["tests/unit/test_canonical_digest_refs.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "DigestRecord",
+      "module": "references.py",
+      "public_api": "DigestRecord",
+      "schema": "digest-record.schema.json",
+      "tests": ["tests/unit/test_golden_fixtures.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "SchemaCatalogue",
+      "module": "references.py",
+      "public_api": "SchemaCatalogue",
+      "schema": "schema-catalogue.schema.json",
+      "tests": ["tests/unit/test_canonical_digest_refs.py", "tests/unit/test_cli_json_loaders.py"],
+      "docs": "docs/schemas.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "SchemaMigrationWitness",
+      "module": "references.py",
+      "public_api": "SchemaMigrationWitness",
+      "schema": "schema-migration-witness.schema.json",
+      "tests": ["tests/unit/test_golden_fixtures.py"],
+      "docs": "docs/schemas.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "CarrierRegistry",
+      "module": "model/registries.py",
+      "public_api": "CarrierRegistry",
+      "schema": "carrier-registry.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "CheckerRegistry",
+      "module": "model/registries.py",
+      "public_api": "CheckerRegistry",
+      "schema": "checker-registry.schema.json",
+      "tests": ["tests/unit/test_golden_fixtures.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "ContractRegistry",
+      "module": "model/contracts.py",
+      "public_api": "ContractRegistry",
+      "schema": "contract-registry.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "JudgmentContract",
+      "module": "model/contracts.py",
+      "public_api": "JudgmentContract",
+      "schema": "contract-registry.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "CarrierContract",
+      "module": "model/contracts.py",
+      "public_api": "CarrierContract",
+      "schema": "contract-registry.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "CheckerContract",
+      "module": "model/contracts.py",
+      "public_api": "CheckerContract",
+      "schema": "contract-registry.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "UseContext",
+      "module": "model/judgments.py",
+      "public_api": "UseContext",
+      "schema": "use-context.schema.json",
+      "tests": ["tests/unit/test_branch_coverage.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "JudgmentRecord",
+      "module": "model/judgments.py",
+      "public_api": "JudgmentRecord",
+      "schema": "judgment-record.schema.json",
+      "tests": ["tests/unit/test_branch_coverage.py", "tests/unit/test_conformance_authority.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "JValid",
+      "module": "model/judgments.py",
+      "public_api": "jvalid",
+      "schema": "judgment-record.schema.json",
+      "tests": ["tests/unit/test_branch_coverage.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "Lifecycle StatusEvent / StatusStep / StatusView / StatusFold",
+      "module": "model/lifecycle.py",
+      "public_api": "StatusEvent, StatusView, StatusFold",
+      "schema": "lifecycle-status-event.schema.json, status-view.schema.json",
+      "tests": ["tests/unit/test_records_lifecycle.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "ResidualRecord",
+      "module": "model/residuals.py",
+      "public_api": "ResidualRecord",
+      "schema": "residual-record.schema.json",
+      "tests": ["tests/unit/test_history_ledger.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "Residual route and liveness / ResidualRoute",
+      "module": "model/residuals.py",
+      "public_api": "ResidualRoute",
+      "schema": "residual-record.schema.json",
+      "tests": ["tests/unit/test_history_ledger.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "ResidualLedger",
+      "module": "model/ledger.py",
+      "public_api": "ResidualLedger",
+      "schema": "residual-ledger.schema.json",
+      "tests": ["tests/unit/test_history_ledger.py", "tests/property/test_properties.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "Residual metabolism",
+      "module": "audit/residual_metabolism.py",
+      "public_api": "audit_residual_metabolism",
+      "schema": "audit-report.schema.json",
+      "tests": ["tests/unit/test_audits_runtime.py"],
+      "docs": "docs/audits.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "LedgerEvent",
+      "module": "model/ledger.py",
+      "public_api": "LedgerEvent",
+      "schema": "ledger-event.schema.json",
+      "tests": ["tests/unit/test_history_ledger.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "TraceCertificate",
+      "module": "model/ledger.py",
+      "public_api": "TraceCertificate",
+      "schema": "residual-ledger.schema.json",
+      "tests": ["tests/unit/test_golden_fixtures.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "TraceOK",
+      "module": "model/ledger.py",
+      "public_api": "ResidualLedger.trace_ok",
+      "schema": "residual-ledger.schema.json",
+      "tests": ["tests/unit/test_history_ledger.py", "tests/property/test_properties.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "VerifierPacket",
+      "module": "model/packets.py",
+      "public_api": "VerifierPacket",
+      "schema": "verifier-packet.schema.json",
+      "tests": ["tests/unit/test_packets_operations.py", "tests/integration/test_cli_extended.py"],
+      "docs": "docs/concepts.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "CoreAccountablePacket",
+      "module": "model/packets.py",
+      "public_api": "CoreAccountablePacket",
+      "schema": "verifier-packet.schema.json",
+      "tests": ["tests/unit/test_packets_operations.py"],
+      "docs": "docs/concepts.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "CounterPacket",
+      "module": "model/packets.py",
+      "public_api": "CounterPacket",
+      "schema": "verifier-packet.schema.json",
+      "tests": ["tests/unit/test_golden_fixtures.py"],
+      "docs": "docs/audits.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "BoundaryTesterPacket",
+      "module": "model/packets.py",
+      "public_api": "BoundaryTesterPacket",
+      "schema": "verifier-packet.schema.json",
+      "tests": ["tests/unit/test_golden_fixtures.py"],
+      "docs": "docs/audits.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "BoundaryRecord",
+      "module": "model/boundaries.py",
+      "public_api": "BoundaryRecord",
+      "schema": "boundary-record.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "ContinuationSpecification",
+      "module": "model/reachability.py",
+      "public_api": "ContinuationSpecification",
+      "schema": "continuation-specification.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "ReachabilityCertificate",
+      "module": "model/reachability.py",
+      "public_api": "ReachabilityCertificate",
+      "schema": "reachability-certificate.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "CounterexampleChannel",
+      "module": "model/reachability.py",
+      "public_api": "CounterexampleChannel",
+      "schema": "counterexample-channel.schema.json",
+      "tests": ["tests/unit/test_branch_coverage.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "Soundness-gap residual / SoundGapResidual",
+      "module": "model/residuals.py",
+      "public_api": "SoundGapResidual",
+      "schema": "sound-gap-residual.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "CertificationRecord",
+      "module": "model/certification.py",
+      "public_api": "CertificationRecord",
+      "schema": "certification-record.schema.json",
+      "tests": ["tests/unit/test_conformance_authority.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "CertificationProfile",
+      "module": "model/certification.py",
+      "public_api": "CertificationProfile",
+      "schema": "certification-profile.schema.json",
+      "tests": ["tests/unit/test_conformance_authority.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "Certification promotion criterion",
+      "module": "model/certification.py",
+      "public_api": "CertificationEngine.promotion_check",
+      "schema": "certification-record.schema.json",
+      "tests": ["tests/unit/test_conformance_authority.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "AuthorityDecision",
+      "module": "model/authority.py",
+      "public_api": "AuthorityDecision",
+      "schema": "authority-decision.schema.json",
+      "tests": ["tests/unit/test_conformance_authority.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "AuthInputs",
+      "module": "model/authority.py",
+      "public_api": "AuthInputs",
+      "schema": "auth-inputs.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "Authority aggregation",
+      "module": "model/authority.py",
+      "public_api": "AuthorityEngine.aggregate",
+      "schema": "authority-decision.schema.json",
+      "tests": ["tests/unit/test_conformance_authority.py", "tests/property/test_properties.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "Aperture",
+      "module": "model/aperture.py",
+      "public_api": "Aperture",
+      "schema": "aperture.schema.json",
+      "tests": ["tests/unit/test_audits_runtime.py"],
+      "docs": "docs/audits.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "CapacityRecord",
+      "module": "model/aperture.py",
+      "public_api": "CapacityRecord",
+      "schema": "aperture.schema.json",
+      "tests": ["tests/unit/test_audits_runtime.py"],
+      "docs": "docs/audits.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "VerifiableFrontierProfile",
+      "module": "model/frontier.py",
+      "public_api": "VerifiableFrontierProfile",
+      "schema": "frontier-profile.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "OverclosureWitness",
+      "module": "model/overclosure.py",
+      "public_api": "OverclosureWitness",
+      "schema": "overclosure-witness.schema.json",
+      "tests": ["tests/unit/test_golden_fixtures.py"],
+      "docs": "docs/audits.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "SchemaOverclosureDetector",
+      "module": "model/overclosure.py",
+      "public_api": "SchemaOverclosureDetector",
+      "schema": "audit-report.schema.json",
+      "tests": ["tests/unit/test_audits_runtime.py", "tests/integration/test_cli.py"],
+      "docs": "docs/audits.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "VerifierMonocultureDetector",
+      "module": "model/overclosure.py",
+      "public_api": "VerifierMonocultureDetector",
+      "schema": "audit-report.schema.json",
+      "tests": ["tests/unit/test_audits_runtime.py", "tests/integration/test_cli_extended.py"],
+      "docs": "docs/audits.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "ExternalPacket",
+      "module": "model/circulation.py",
+      "public_api": "ExternalPacket",
+      "schema": "verifier-packet.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/concepts.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "LocalInternalization pipeline",
+      "module": "model/circulation.py",
+      "public_api": "LocalSovereignty.internalize",
+      "schema": "verifier-packet.schema.json",
+      "tests": ["tests/unit/test_extended_models.py", "tests/integration/test_cli_extended.py"],
+      "docs": "docs/concepts.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "LocalSovereignty",
+      "module": "model/circulation.py",
+      "public_api": "LocalSovereignty",
+      "schema": "verifier-packet.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/concepts.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "MaturityProfile",
+      "module": "model/maturity.py",
+      "public_api": "MaturityProfile",
+      "schema": "maturity-profile.schema.json",
+      "tests": ["tests/unit/test_extended_models.py"],
+      "docs": "docs/data_model.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "VetBundle",
+      "module": "model/conformance.py",
+      "public_api": "VetBundle",
+      "schema": "vet-bundle.schema.json",
+      "tests": ["tests/unit/test_conformance_authority.py", "tests/integration/test_cli_extended.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "ConformanceProfile",
+      "module": "model/records.py",
+      "public_api": "ConformanceProfile",
+      "schema": "conformance-report.schema.json",
+      "tests": ["tests/unit/test_conformance_authority.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "ConformanceEngine",
+      "module": "model/conformance.py",
+      "public_api": "ConformanceEngine",
+      "schema": "conformance-report.schema.json",
+      "tests": ["tests/unit/test_conformance_authority.py", "tests/integration/test_cli_extended.py"],
+      "docs": "docs/conformance.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "RuntimeEngine",
+      "module": "runtime/engine.py",
+      "public_api": "RuntimeEngine",
+      "schema": "runtime-report.schema.json",
+      "tests": ["tests/unit/test_audits_runtime.py", "tests/unit/test_extended_models.py"],
+      "docs": "docs/examples.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "AuditEngine",
+      "module": "audit/reports.py",
+      "public_api": "AuditEngine",
+      "schema": "audit-report.schema.json",
+      "tests": ["tests/unit/test_audits_runtime.py"],
+      "docs": "docs/audits.md",
+      "status": "implemented"
+    },
+    {
+      "theory_term": "secret/local-info/package-content scanners",
+      "module": "audit/security.py, audit/local_info.py, scripts/verify_package_contents.py",
+      "public_api": "scan_secrets, scan_local_info, verify_package_paths",
+      "schema": "audit-report.schema.json",
+      "tests": ["tests/security/test_scanners.py"],
+      "docs": "docs/security.md",
+      "status": "implemented"
+    }
+  ]
+}

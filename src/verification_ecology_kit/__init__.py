@@ -27,7 +27,7 @@ from verification_ecology_kit.references import (
 )
 from verification_ecology_kit.runtime.engine import RuntimeEngine
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 __all__ = [
     "AuditEngine",

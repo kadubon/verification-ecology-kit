@@ -1,3 +1,18 @@
-from verification_ecology_kit.operations.base import PacketOperationEngine
+"""Contrast packet operation."""
 
-__all__ = ["PacketOperationEngine"]
+from __future__ import annotations
+
+from verification_ecology_kit.model.packets import VerifierPacket
+from verification_ecology_kit.operations.base import OperationReport, PacketOperationEngine
+
+
+def contrast(
+    left: VerifierPacket,
+    right: VerifierPacket,
+    *,
+    engine: PacketOperationEngine | None = None,
+) -> OperationReport:
+    return (engine or PacketOperationEngine()).contrast(left, right)
+
+
+__all__ = ["PacketOperationEngine", "contrast"]

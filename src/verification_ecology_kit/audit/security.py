@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import re
+import tarfile
+import zipfile
 from pathlib import Path
 
 from verification_ecology_kit.audit.reports import AuditFinding, AuditReport
@@ -68,6 +70,50 @@ def verify_package_paths(paths: list[Path]) -> AuditReport:
         "pass" if not findings else "quarantine",
         findings=findings,
         support_blocking_failures=["package_content_leak"] if findings else [],
+    ).finalize()
+
+
+def verify_package_archives(dist: Path) -> AuditReport:
+    findings: list[AuditFinding] = []
+    paths: list[Path] = []
+    evidence_refs: list[str] = []
+    wheels = 0
+    sdists = 0
+
+    if not dist.exists():
+        findings.append(
+            AuditFinding("package_artifact_missing", "dist directory is missing", "high")
+        )
+    else:
+        for archive in dist.iterdir():
+            if archive.suffix == ".whl":
+                wheels += 1
+                evidence_refs.append(archive.as_posix())
+                with zipfile.ZipFile(archive) as wheel:
+                    paths.extend(Path(name) for name in wheel.namelist())
+            elif archive.suffixes[-2:] == [".tar", ".gz"]:
+                sdists += 1
+                evidence_refs.append(archive.as_posix())
+                with tarfile.open(archive) as sdist:
+                    paths.extend(Path(member.name) for member in sdist.getmembers())
+
+    if wheels == 0:
+        findings.append(
+            AuditFinding("package_artifact_missing", "wheel artifact is missing", "high")
+        )
+    if sdists == 0:
+        findings.append(
+            AuditFinding("package_artifact_missing", "sdist artifact is missing", "high")
+        )
+
+    content_report = verify_package_paths(paths)
+    findings.extend(content_report.findings)
+    return AuditReport(
+        "package-contents",
+        "pass" if not findings else "quarantine",
+        findings=findings,
+        support_blocking_failures=["package_content_leak"] if findings else [],
+        evidence_refs=evidence_refs,
     ).finalize()
 
 

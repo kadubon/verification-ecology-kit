@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/auth-inputs.schema.json",
+  "type": "object",
+  "properties": {
+    "auth_inputs_ref": { "type": "string", "minLength": 1 },
+    "object_id": { "type": "string", "minLength": 1 },
+    "schema_version": { "type": "string" },
+    "canonical_digest": {
+      "type": "object",
+      "properties": {
+        "algorithm_id": { "type": "string" },
+        "value": { "type": "string" }
+      },
+      "required": ["algorithm_id", "value"],
+      "additionalProperties": false
+    },
+    "candidate_ref": { "type": "string" },
+    "action": { "type": "string" },
+    "action_scope": { "type": "array", "items": { "type": "string" } },
+    "resolved_input_refs": { "type": "array", "items": { "type": "string" } },
+    "support_refs": { "type": "array", "items": { "type": "string" } },
+    "absence_cert_refs": { "type": "array", "items": { "type": "string" } },
+    "counterexample_refs": { "type": "array", "items": { "type": "string" } },
+    "soundgap_refs": { "type": "array", "items": { "type": "string" } },
+    "status_view_refs": { "type": "array", "items": { "type": "string" } },
+    "policy_conflict_refs": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "auth_inputs_ref",
+    "object_id",
+    "schema_version",
+    "canonical_digest",
+    "candidate_ref",
+    "action",
+    "action_scope",
+    "resolved_input_refs",
+    "support_refs",
+    "absence_cert_refs",
+    "counterexample_refs",
+    "soundgap_refs",
+    "status_view_refs",
+    "policy_conflict_refs"
+  ],
+  "additionalProperties": false
+}

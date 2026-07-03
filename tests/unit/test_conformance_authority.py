@@ -14,7 +14,7 @@ from verification_ecology_kit.model.records import (
     ConformanceProfile,
     LifecycleStatus,
 )
-from verification_ecology_kit.references import ObjectEnvelope, SchemaCatalogue
+from verification_ecology_kit.references import ObjectEnvelope, ObjectRef, SchemaCatalogue
 
 
 def _bundle() -> VetBundle:
@@ -40,6 +40,81 @@ def test_conformance_core_accepts_valid_digest_bundle() -> None:
         "RefGraphOK",
         "ResidualOK",
     ]
+
+
+def test_conformance_operational_uses_status_ref() -> None:
+    status = ObjectEnvelope("status", "status-event", "1.0", {"status": "active"})
+    status.refresh_digest()
+    envelope = ObjectEnvelope(
+        "o",
+        "schema",
+        "1.0",
+        {"value": "x"},
+        status_ref=ObjectRef("b", "status", "status-event", "/payload"),
+    )
+    envelope.refresh_digest()
+    bundle = VetBundle(
+        bundle_id="b",
+        schema_version="1",
+        conformance_profile=ConformanceProfile.OPERATIONAL,
+        schema_catalogue=SchemaCatalogue(
+            "cat",
+            {"schema": ("1.0",), "status-event": ("1.0",)},
+        ),
+        objects=[envelope, status],
+    )
+
+    assert ConformanceEngine().run(bundle).decision.value == "accept"
+
+
+def test_conformance_operational_rejects_stale_status_and_unchecked_judgment() -> None:
+    stale = ObjectEnvelope("o", "schema", "1.0", {"status": "stale"})
+    stale.refresh_digest()
+    stale_bundle = VetBundle(
+        "b",
+        "1",
+        ConformanceProfile.OPERATIONAL,
+        SchemaCatalogue("cat", {"schema": ("1.0",)}),
+        [stale],
+    )
+    assert ConformanceEngine().run(stale_bundle).decision.value == "reject"
+
+    active = ObjectEnvelope("o", "schema", "1.0", {"status": "active"})
+    active.refresh_digest()
+    judgment_bundle = VetBundle(
+        "b",
+        "1",
+        ConformanceProfile.OPERATIONAL,
+        SchemaCatalogue("cat", {"schema": ("1.0",)}),
+        [active],
+        judgment_records=[{"judgment_id": "j", "jvalid_result": "not_checked"}],
+    )
+    assert ConformanceEngine().run(judgment_bundle).decision.value == "reject"
+
+
+def test_conformance_operational_checks_authority_support() -> None:
+    envelope = ObjectEnvelope("o", "schema", "1.0", {"status": "active"})
+    envelope.refresh_digest()
+    bundle = VetBundle(
+        "b",
+        "1",
+        ConformanceProfile.OPERATIONAL,
+        SchemaCatalogue("cat", {"schema": ("1.0",)}),
+        [envelope],
+        authority_decisions=[
+            {
+                "authority_decision_id": "a",
+                "decision": "allow",
+                "lifecycle_status": "active",
+                "required_support_refs": ["support"],
+                "support_judgment_refs": [],
+            }
+        ],
+    )
+    assert ConformanceEngine().run(bundle).decision.value == "reject"
+
+    bundle.authority_decisions[0]["support_judgment_refs"] = ["judgment"]
+    assert ConformanceEngine().run(bundle).decision.value == "accept"
 
 
 def test_authority_denies_by_default() -> None:

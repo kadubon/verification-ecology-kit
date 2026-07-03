@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/status-view.schema.json",
+  "type": "object",
+  "properties": {
+    "object_id": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["active", "stale", "revoked", "migrated", "unknown"] },
+    "residuals": { "type": "array", "items": { "$ref": "residual-record.schema.json" } },
+    "status_event_refs": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": ["object_id", "status", "residuals", "status_event_refs"],
+  "additionalProperties": false
+}

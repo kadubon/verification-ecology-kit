@@ -11,6 +11,10 @@ nav:
   - CLI: cli.md
   - Examples: examples.md
   - Security: security.md
+  - V1 Audit: v1_audit.md
+  - V1 Readiness: v1_readiness.md
+  - Release Readiness: release_readiness.md
+  - Release Gates: release_gates.md
   - Pre-Publication Audit: pre_publication_audit.md
   - Publishing: pyproject-publishing.md
   - API: api.md

@@ -72,6 +72,18 @@ def test_fixture_directories_are_non_empty() -> None:
     assert len(list(GOLDEN.glob("*.json"))) >= 10
 
 
+def test_theory_coverage_fixture_has_no_v1_gaps() -> None:
+    data = _load(GOLDEN / "theory_coverage.expected.json")
+    terms = data["terms"]
+    assert len(terms) >= 50
+    for item in terms:
+        assert item["status"] in {"implemented", "not_applicable"}
+        assert item["schema"]
+        assert (ROOT.parent / item["docs"]).is_file()
+        for test_path in item["tests"]:
+            assert (ROOT.parent / test_path).is_file()
+
+
 def test_golden_conformance_cases() -> None:
     for path in [GOLDEN / "minimal_core_bundle.json", GOLDEN / "invalid_digest.json"]:
         data = _load(path)

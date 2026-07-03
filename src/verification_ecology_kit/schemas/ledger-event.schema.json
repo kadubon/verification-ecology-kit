@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/ledger-event.schema.json",
+  "type": "object",
+  "properties": {
+    "kind": { "type": "string", "enum": ["add", "merge", "retire", "quarantine", "redact", "import"] },
+    "source_residuals": { "type": "array", "items": { "type": "string" } },
+    "target_residuals": { "type": "array", "items": { "type": "string" } },
+    "justification": { "type": "string", "minLength": 1 },
+    "pre_state_digest": { "type": "string" },
+    "post_state_digest": { "type": "string" },
+    "actor_authority_ref": { "type": "string", "minLength": 1 },
+    "policy_id": { "type": "string", "minLength": 1 },
+    "event_id": { "type": "string", "minLength": 1 },
+    "clock_model": { "type": "string", "enum": ["total_order", "partial_order"] },
+    "conflict_policy": { "type": "string", "minLength": 1 },
+    "predecessor_event_id": { "type": ["string", "null"] },
+    "provenance": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "kind",
+    "source_residuals",
+    "target_residuals",
+    "justification",
+    "pre_state_digest",
+    "post_state_digest",
+    "actor_authority_ref",
+    "policy_id",
+    "event_id",
+    "clock_model",
+    "conflict_policy",
+    "predecessor_event_id",
+    "provenance"
+  ],
+  "additionalProperties": false
+}

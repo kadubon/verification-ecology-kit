@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/certification-profile.schema.json",
+  "type": "object",
+  "properties": {
+    "observed_support": { "type": "string" },
+    "local_use_support": { "type": "string" },
+    "predictive_stability_support": { "type": "string" },
+    "transfer_stability_support": { "type": "string" },
+    "self_modification_support": { "type": "string" },
+    "frontier_effect": { "type": "string" },
+    "aperture_preservation": { "type": "string" },
+    "residual_monotonicity": { "type": "string" },
+    "evidence_refs": { "type": "array", "items": { "type": "string" } },
+    "residual_obligations": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "observed_support",
+    "local_use_support",
+    "predictive_stability_support",
+    "transfer_stability_support",
+    "self_modification_support",
+    "frontier_effect",
+    "aperture_preservation",
+    "residual_monotonicity",
+    "evidence_refs",
+    "residual_obligations"
+  ],
+  "additionalProperties": false
+}

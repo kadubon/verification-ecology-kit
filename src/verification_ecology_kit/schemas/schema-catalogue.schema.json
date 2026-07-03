@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/schema-catalogue.schema.json",
+  "type": "object",
+  "properties": {
+    "catalogue_id": { "type": "string", "minLength": 1 },
+    "accepted_schema_versions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" },
+        "minItems": 1
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "additionalProperties": { "type": "object" }
+    },
+    "migration_witnesses": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  },
+  "required": ["catalogue_id", "accepted_schema_versions", "schemas"],
+  "additionalProperties": false
+}

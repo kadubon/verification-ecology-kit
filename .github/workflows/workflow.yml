@@ -119,6 +119,7 @@ jobs:
         with:
           enable-cache: false
       - run: uv sync --all-extras --dev
+      - run: uv run python scripts/check_v1_readiness.py --strict
       - run: uv build --no-sources
       - run: uv run python scripts/verify_package_contents.py
       - run: uv run python scripts/smoke_install_wheel.py

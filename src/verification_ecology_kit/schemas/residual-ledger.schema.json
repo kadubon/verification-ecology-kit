@@ -4,7 +4,7 @@
   "type": "object",
   "properties": {
     "residuals": { "type": "array", "items": { "$ref": "residual-record.schema.json" } },
-    "events": { "type": "array", "items": { "type": "object" } },
+    "events": { "type": "array", "items": { "$ref": "ledger-event.schema.json" } },
     "policy_id": { "type": "string" }
   },
   "required": ["residuals", "events", "policy_id"],

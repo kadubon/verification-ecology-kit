@@ -32,7 +32,9 @@ def test_cli_schema_list(capsys) -> None:
     assert "verifier-packet.schema.json" in data["schemas"]
 
 
-def test_cli_audit_schema_overclosure(capsys) -> None:
-    assert main(["audit", "schema-overclosure"]) == 0
+def test_cli_audit_schema_overclosure(tmp_path: Path, capsys) -> None:
+    audit_input = tmp_path / "schema-overclosure.json"
+    audit_input.write_text('{"schema_rejected_unknown": true}', encoding="utf-8")
+    assert main(["audit", "schema-overclosure", str(audit_input)]) == 0
     data = json.loads(capsys.readouterr().out)
     assert data["decision"] == "residualize"

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/sound-gap-residual.schema.json",
+  "allOf": [
+    { "$ref": "residual-record.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "certificate_ref": { "type": "string" },
+        "semantic_target": { "type": "string" },
+        "operational_claim": { "type": "string" }
+      }
+    }
+  ]
+}

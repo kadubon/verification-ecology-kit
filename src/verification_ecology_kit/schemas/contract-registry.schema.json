@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/contract-registry.schema.json",
+  "type": "object",
+  "properties": {
+    "carrier_contracts": { "type": "object", "additionalProperties": { "type": "object" } },
+    "checker_contracts": { "type": "object", "additionalProperties": { "type": "object" } },
+    "judgment_contracts": { "type": "object", "additionalProperties": { "type": "object" } }
+  },
+  "required": ["carrier_contracts", "checker_contracts", "judgment_contracts"],
+  "additionalProperties": false
+}

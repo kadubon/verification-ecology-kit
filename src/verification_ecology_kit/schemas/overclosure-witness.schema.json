@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/overclosure-witness.schema.json",
+  "type": "object",
+  "properties": {
+    "witness_id": { "type": "string", "minLength": 1 },
+    "gain_record": { "type": "array", "items": { "type": "string" } },
+    "scope_and_measurement_context": { "type": "array", "items": { "type": "string" } },
+    "regression_records": { "type": "array", "items": { "type": "string" } },
+    "measurement_assumptions": { "type": "array", "items": { "type": "string" } },
+    "residual_adequacy_record": { "type": "array", "items": { "type": "string" } },
+    "provenance": { "type": "array", "items": { "type": "string" } },
+    "falsification_condition": { "type": "string" },
+    "negative_evidence_channel": { "type": "string" },
+    "repair_or_tightening_hooks": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "witness_id",
+    "gain_record",
+    "scope_and_measurement_context",
+    "regression_records",
+    "measurement_assumptions",
+    "residual_adequacy_record",
+    "provenance",
+    "falsification_condition",
+    "negative_evidence_channel",
+    "repair_or_tightening_hooks"
+  ],
+  "additionalProperties": false
+}

@@ -10,7 +10,7 @@ from jsonschema.exceptions import SchemaError, ValidationError
 
 from verification_ecology_kit.digest import DigestPolicy, object_digest_input
 from verification_ecology_kit.model.ledger import ResidualLedger
-from verification_ecology_kit.model.records import ConformanceProfile, jsonable
+from verification_ecology_kit.model.records import ConformanceProfile, LifecycleStatus, jsonable
 from verification_ecology_kit.references import (
     ObjectEnvelope,
     ObjectRef,
@@ -162,17 +162,54 @@ class ConformanceEngine:
         )
 
     def _check_statusok(self, bundle: VetBundle) -> CheckResult:
-        return pass_result("StatusOK")
+        resolver = ReferenceResolver(bundle_id=bundle.bundle_id, envelopes=bundle.objects)
+        evidence_refs: list[str] = []
+        for envelope in bundle.objects:
+            status = self._status_from_payload(envelope.payload)
+            if envelope.status_ref is not None:
+                _, target, result = resolver.resolve(envelope.status_ref)
+                if not result.passed:
+                    return fail_result("StatusOK", FailureCode.UNRESOLVED_REFERENCE)
+                status = self._status_from_payload(target)
+                evidence_refs.append(envelope.status_ref.object_id)
+            if status is None:
+                return residual_result(
+                    "StatusOK",
+                    FailureCode.STATUS_BLOCKS_SUPPORT,
+                    suggested_repair_hooks=("attach_status_ref_or_lifecycle_status",),
+                )
+            if status not in {LifecycleStatus.ACTIVE, LifecycleStatus.MIGRATED}:
+                return fail_result("StatusOK", FailureCode.STATUS_BLOCKS_SUPPORT)
+            evidence_refs.append(envelope.object_id)
+        return pass_result("StatusOK", evidence_refs=tuple(dict.fromkeys(evidence_refs)))
 
     def _check_judgmentok(self, bundle: VetBundle) -> CheckResult:
-        invalid = [
-            item
-            for item in bundle.judgment_records
-            if isinstance(item, dict) and item.get("JValid_result") == "fail"
-        ]
-        if invalid:
-            return fail_result("JudgmentOK", FailureCode.JUDGMENT_INVALID)
-        return pass_result("JudgmentOK")
+        evidence_refs: list[str] = []
+        for item in bundle.judgment_records:
+            record = self._record_dict(item)
+            if record is None:
+                return fail_result("JudgmentOK", FailureCode.JUDGMENT_INVALID)
+            status = self._status_from_payload(record)
+            if status is not None and status not in {
+                LifecycleStatus.ACTIVE,
+                LifecycleStatus.MIGRATED,
+            }:
+                return fail_result("JudgmentOK", FailureCode.STATUS_BLOCKS_SUPPORT)
+            jvalid = str(
+                record.get("jvalid_result", record.get("JValid_result", "not_checked"))
+            ).lower()
+            if jvalid == "fail":
+                return fail_result("JudgmentOK", FailureCode.JUDGMENT_INVALID)
+            if jvalid not in {"pass", "not_applicable"}:
+                return residual_result(
+                    "JudgmentOK",
+                    FailureCode.JUDGMENT_INVALID,
+                    suggested_repair_hooks=("run_jvalid_or_mark_not_applicable",),
+                )
+            judgment_id = record.get("judgment_id")
+            if judgment_id is not None:
+                evidence_refs.append(str(judgment_id))
+        return pass_result("JudgmentOK", evidence_refs=tuple(evidence_refs))
 
     def _check_residualok(self, bundle: VetBundle) -> CheckResult:
         non_live = [
@@ -191,10 +228,62 @@ class ConformanceEngine:
 
     def _check_authorityok(self, bundle: VetBundle) -> CheckResult:
         for item in bundle.authority_decisions:
-            if (
-                isinstance(item, dict)
-                and item.get("decision") == "allow"
-                and item.get("decision_status") not in {"active", None}
-            ):
+            record = self._record_dict(item)
+            if record is None:
                 return fail_result("AuthorityOK", FailureCode.AUTHORITY_MISMATCH)
+            decision = str(record.get("decision", "deny")).lower()
+            if not bool(record.get("deny_by_default", True)):
+                return fail_result("AuthorityOK", FailureCode.AUTHORITY_MISMATCH)
+            status = self._status_from_payload(record)
+            if status is not None and status not in {
+                LifecycleStatus.ACTIVE,
+                LifecycleStatus.MIGRATED,
+            }:
+                return fail_result("AuthorityOK", FailureCode.AUTHORITY_MISMATCH)
+            if decision == "allow":
+                required_support = tuple(record.get("required_support_refs", ()))
+                support_judgments = tuple(record.get("support_judgment_refs", ()))
+                if required_support and not support_judgments:
+                    return fail_result("AuthorityOK", FailureCode.AUTHORITY_MISMATCH)
+                continue
+            if decision == "residualize":
+                residual_refs = tuple(str(ref) for ref in record.get("residual_gates", ()))
+                return residual_result(
+                    "AuthorityOK",
+                    FailureCode.AUTHORITY_MISMATCH,
+                    residual_refs=residual_refs,
+                    suggested_repair_hooks=("clear_authority_residual_gates",),
+                )
+            return fail_result("AuthorityOK", FailureCode.AUTHORITY_MISMATCH)
+        if bundle.authority_decisions:
+            refs = [
+                str(record.get("authority_decision_id"))
+                for item in bundle.authority_decisions
+                if (record := self._record_dict(item)) and record.get("authority_decision_id")
+            ]
+            return pass_result("AuthorityOK", evidence_refs=tuple(refs))
         return pass_result("AuthorityOK")
+
+    def _status_from_payload(self, value: object) -> LifecycleStatus | None:
+        if not isinstance(value, dict):
+            return None
+        for key in ("lifecycle_status", "status", "decision_status", "post_status"):
+            if key in value:
+                try:
+                    return LifecycleStatus(str(value[key]))
+                except ValueError:
+                    return LifecycleStatus.UNKNOWN
+        payload = value.get("payload")
+        if isinstance(payload, dict):
+            return self._status_from_payload(payload)
+        return None
+
+    def _record_dict(self, item: object) -> dict[str, Any] | None:
+        if isinstance(item, dict):
+            return item
+        to_dict = getattr(item, "to_dict", None)
+        if callable(to_dict):
+            record = to_dict()
+            if isinstance(record, dict):
+                return record
+        return None

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "verification-ecology-kit"
-version = "0.1.0"
+version = "1.0.0"
 description = "Python toolkit for verification auditing, residual ledgers, conformance checks, and verifier packet workflows."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -21,7 +21,7 @@ keywords = [
   "self-verification",
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: Apache Software License",
@@ -137,7 +137,7 @@ module = ["jsonschema", "jsonschema.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-addopts = "--strict-markers --strict-config --cov=verification_ecology_kit --cov-report=term-missing --cov-fail-under=90"
+addopts = "--strict-markers --strict-config --cov=verification_ecology_kit --cov-report=term-missing --cov-fail-under=92"
 testpaths = ["tests"]
 markers = [
   "property: property-based tests",

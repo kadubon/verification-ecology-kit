@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/continuation-specification.schema.json",
+  "type": "object",
+  "properties": {
+    "continuation_id": { "type": "string", "minLength": 1 },
+    "membership_carrier_ref": { "type": "string" },
+    "coverage_carrier_ref": { "type": "string" },
+    "mode": { "type": "string", "enum": ["over", "under", "sampled", "monitor", "unknown"] },
+    "horizon": { "type": "string" },
+    "resource_bounds": { "type": "array", "items": { "type": "string" } },
+    "evidence_refs": { "type": "array", "items": { "type": "string" } },
+    "negative_evidence_channel": { "type": "string" },
+    "residual_refs": { "type": "array", "items": { "type": "string" } },
+    "provenance": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "continuation_id",
+    "membership_carrier_ref",
+    "coverage_carrier_ref",
+    "mode",
+    "horizon",
+    "resource_bounds",
+    "evidence_refs",
+    "negative_evidence_channel",
+    "residual_refs",
+    "provenance"
+  ],
+  "additionalProperties": false
+}

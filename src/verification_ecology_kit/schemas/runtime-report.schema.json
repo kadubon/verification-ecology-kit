@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/runtime-report.schema.json",
+  "type": "object",
+  "properties": {
+    "generated_packets": { "type": "array", "items": { "type": "string" } },
+    "residuals_routed": { "type": "array", "items": { "type": "string" } },
+    "quarantined_packets": { "type": "array", "items": { "type": "string" } },
+    "aperture_debts": { "type": "array", "items": { "type": "string" } },
+    "report_digest": { "type": "string" }
+  },
+  "required": [
+    "generated_packets",
+    "residuals_routed",
+    "quarantined_packets",
+    "aperture_debts",
+    "report_digest"
+  ],
+  "additionalProperties": false
+}

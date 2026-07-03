@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vet.example/schema/carrier-registry.schema.json",
+  "type": "object",
+  "properties": {
+    "entries": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "carrier_id": { "type": "string" },
+          "kind": { "type": "string" },
+          "domain": { "type": "string" },
+          "codomain": { "type": "string" },
+          "checker_id": { "type": "string" },
+          "version": { "type": "string" },
+          "trust_basis": { "type": "array", "items": { "type": "string" } },
+          "invalidation_conditions": { "type": "array", "items": { "type": "string" } },
+          "migration_witness_ref": { "type": "string" },
+          "compatibility_relation": { "type": "string" },
+          "status": { "type": "string", "enum": ["active", "stale", "revoked", "migrated", "unknown"] },
+          "acceptance_judgment_ref": { "type": "string" }
+        },
+        "required": [
+          "carrier_id",
+          "kind",
+          "domain",
+          "codomain",
+          "checker_id",
+          "version",
+          "trust_basis",
+          "invalidation_conditions",
+          "migration_witness_ref",
+          "compatibility_relation",
+          "status",
+          "acceptance_judgment_ref"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["entries"],
+  "additionalProperties": false
+}
