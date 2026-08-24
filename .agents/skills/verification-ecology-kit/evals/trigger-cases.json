@@ -1,0 +1,31 @@
+{
+  "skill": "verification-ecology-kit",
+  "positive": [
+    {"prompt":"Validate this evidence bundle and preserve unresolved obligations.","reason":"bundle and residuals"},
+    {"prompt":"Check the digest and provenance of this verifier packet.","reason":"packet integrity"},
+    {"prompt":"Audit whether our verification records have a monoculture problem.","reason":"verifier independence"},
+    {"prompt":"Can stale evidence still support this deployment decision?","reason":"evidence authority"},
+    {"prompt":"Run conformance checks on a VET bundle.","reason":"conformance"},
+    {"prompt":"Make an audit trail for this structured verification record.","reason":"verification record"},
+    {"prompt":"Verify references in our evidence packet.","reason":"reference integrity"},
+    {"prompt":"Find the remaining residual work after this verifier check.","reason":"residual ledger"},
+    {"prompt":"Does this allow decision have support evidence?","reason":"authority gate"},
+    {"prompt":"Counter-check this verifier packet for hidden failure modes.","reason":"verification ecology"}
+  ],
+  "negative": [
+    {"prompt":"Write pytest tests for my Flask app.","reason":"generic testing"},
+    {"prompt":"Explain linting.","reason":"generic linting"},
+    {"prompt":"Review this pull request.","reason":"generic code review"},
+    {"prompt":"Is this software correct?","reason":"no evidence object"},
+    {"prompt":"Prove this theorem.","reason":"generic formal methods"},
+    {"prompt":"Store a user preference in memory.","reason":"memory routing"},
+    {"prompt":"My scientist is p-hacking.","reason":"scientific inference routing"},
+    {"prompt":"Benchmark LLM accuracy.","reason":"generic benchmark"}
+  ],
+  "ambiguous": [
+    {"prompt":"Can this agent result be reused?","expected":"route to PIC unless the object is an evidence bundle","reason":"object unspecified"},
+    {"prompt":"This receipt has expired.","expected":"use CMGL for memory receipt; otherwise establish object first","reason":"receipt domain unspecified"},
+    {"prompt":"The verifier says PASS.","expected":"use VEK if packet/evidence provenance is in scope","reason":"needs evidence record"},
+    {"prompt":"Check this model's safety proof.","expected":"do not activate without a structured verification object","reason":"unsupported broad claim"}
+  ]
+}

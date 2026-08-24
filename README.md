@@ -12,6 +12,14 @@ and auditing verification evidence. The formal claim is limited to the
 implemented VET-Core language. It does not prove every statement in Verifier
 Ecology Theory.
 
+## Agent Skill
+
+This repository includes an Agent Skills-compatible workflow at
+[`.agents/skills/verification-ecology-kit/SKILL.md`](.agents/skills/verification-ecology-kit/SKILL.md).
+Compatible agents can discover it from this repository, or copy it to a supported user skills
+directory such as `~/.agents/skills/verification-ecology-kit/`. The canonical implementation remains
+this repository.
+
 It helps you answer practical questions such as:
 
 - What exactly was checked?
