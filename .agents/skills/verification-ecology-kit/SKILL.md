@@ -60,6 +60,14 @@ residual references.
 
 ## Evidence and result semantics
 
+For finite verification workload allocation, explicitly select `vek capacity` or
+`RuntimeEngine.capacity(contract)`. Read `docs/capacity.md` before applying a local
+plan. Inspect/plan/check/compare/export are read-only; apply-local and ingest change
+only the serialized local work ledger. Preserve unknown dispatches and negative
+results. Investment enables model-only options, never observed service or authority.
+Use `capacity-report.schema.json`; CCR owns proposal admission and CAIT owns growth
+accounting. Existing runtime defaults and VET-Core theorem statements remain intact.
+
 Schema, digest, and reference checks establish only their named mechanical properties.
 Core conformance can be structurally valid while operational authority remains blocked.
 `allow` is deny-by-default scoped authorization only when its required support is current;

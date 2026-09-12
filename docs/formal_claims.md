@@ -6,11 +6,11 @@ This is the exact v1.2.0 formal claim. It is allowed only when all formal gates
 pass:
 
 ```bash
-cd formal/lean
-lake build
 uv run python scripts/check_formal_coverage.py
 uv run python scripts/check_formal_claims.py
 uv run pytest tests/formal
+cd formal/lean
+lake build
 ```
 
 ## What Is Claimed
@@ -70,3 +70,9 @@ The script `scripts/check_formal_claims.py` checks:
 - README and formal docs carry the exact allowed claim;
 - docs distinguish Python conformance testing from full formal verification;
 - forbidden broad claims do not appear.
+
+## Experimental capacity profile
+
+See [capacity semantics](capacity.md), [capacity formal boundary](capacity_formal.md),
+[interchange](capacity_interchange.md), and [release evidence](capacity_release.md).
+This additive profile does not broaden the established VET-Core formal claim.

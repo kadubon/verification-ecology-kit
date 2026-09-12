@@ -1,0 +1,263 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verification-ecology-kit.org/schemas/capacity-plan.schema.json",
+  "title": "capacity-plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_digest",
+    "source_digest",
+    "revision",
+    "schedule",
+    "checked",
+    "search"
+  ],
+  "properties": {
+    "contract_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "schedule": {
+      "type": "object",
+      "maxProperties": 12,
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 1000000
+      }
+    },
+    "checked": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "objective",
+        "branches",
+        "mandatory_met",
+        "reservations",
+        "unallocated_followups"
+      ],
+      "properties": {
+        "objective": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^-?[0-9]+(/[1-9][0-9]*)?$",
+            "maxLength": 64
+          },
+          "minItems": 1,
+          "maxItems": 12
+        },
+        "branches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "scenario",
+              "completed",
+              "completed_bundles",
+              "missed_deadlines",
+              "repair",
+              "costs",
+              "backlog",
+              "backlog_peak",
+              "unfinished",
+              "mandatory_met"
+            ],
+            "properties": {
+              "scenario": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "completed": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "minItems": 0,
+                "maxItems": 32
+              },
+              "completed_bundles": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "minItems": 0,
+                "maxItems": 32
+              },
+              "missed_deadlines": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "minItems": 0,
+                "maxItems": 32
+              },
+              "repair": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "minItems": 0,
+                "maxItems": 32
+              },
+              "costs": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000000
+                },
+                "minItems": 1,
+                "maxItems": 8
+              },
+              "backlog": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000000
+                },
+                "minItems": 1,
+                "maxItems": 17
+              },
+              "backlog_peak": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "unfinished": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "mandatory_met": {
+                "type": "boolean"
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 8
+        },
+        "mandatory_met": {
+          "type": "boolean"
+        },
+        "reservations": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "minItems": 1,
+            "maxItems": 16
+          },
+          "minItems": 1,
+          "maxItems": 8
+        },
+        "unallocated_followups": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "minItems": 0,
+          "maxItems": 12
+        }
+      }
+    },
+    "search": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "complete",
+        "candidates",
+        "examined",
+        "valid",
+        "budget",
+        "checker_calls",
+        "rejections",
+        "status",
+        "optimality"
+      ],
+      "properties": {
+        "complete": {
+          "type": "boolean"
+        },
+        "candidates": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 582622237229761
+        },
+        "examined": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "valid": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "budget": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "checker_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "rejections": {
+          "type": "object",
+          "maxProperties": 64,
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          }
+        },
+        "status": {
+          "enum": [
+            "feasible",
+            "infeasible",
+            "unknown"
+          ]
+        },
+        "optimality": {
+          "enum": [
+            "finite-catalogue",
+            "checked-incumbent"
+          ]
+        }
+      }
+    }
+  }
+}

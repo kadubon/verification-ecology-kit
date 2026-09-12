@@ -95,7 +95,7 @@ theorem migrated_support_requires_witness
   cases hallows with
   | allow _ _ migratedWitness _ _ _ _ =>
       have hwitness := migratedWitness support hmem hmigrated
-      cases hwitness
+      rw [hnoWitness] at hwitness
       contradiction
 
 theorem external_packet_not_authority_before_internalization
@@ -106,7 +106,7 @@ theorem external_packet_not_authority_before_internalization
   cases hallows with
   | allow _ _ _ _ externalReady _ _ =>
       unfold ExternalCandidatesInternalized at externalReady
-      cases externalReady
+      rw [hnotReady] at externalReady
       contradiction
 
 theorem runtime_preserves_ecological_invariants
@@ -138,7 +138,10 @@ theorem packet_spam_not_acceleration
     (hspam : PacketSpam before after) :
     ¬ VerifierAcceleration before after := by
   intro haccel
-  exact hspam.right.left haccel.right.left
+  have hfalse := hspam.right.left
+  have htrue := haccel.right.left
+  rw [hfalse] at htrue
+  contradiction
 
 theorem aperture_loss_requires_debt
     {s s' : EcologyState} {op : PacketOperation}
@@ -172,7 +175,11 @@ theorem anti_overclosure_overclosure_blocked
   unfold SchemaRevisable
   intro hrev
   cases hrev with
-  | inl hescape => exact h.left hescape
-  | inr hschema => exact h.right hschema
+  | inl hescape =>
+      rw [h.left] at hescape
+      contradiction
+  | inr hschema =>
+      rw [h.right] at hschema
+      contradiction
 
 end VETCore

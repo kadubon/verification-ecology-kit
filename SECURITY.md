@@ -1,5 +1,10 @@
 # Security Policy
 
+The experimental capacity profile accepts bounded inert JSON contracts/results and
+does not execute generated code or external checks. Planning is read-only; local
+reservation/event updates require explicit calls and a serialized single writer.
+Caller-supplied observed-service labels are rejected. CCR exports are proposals only.
+
 ## Runtime Defaults
 
 - No telemetry.

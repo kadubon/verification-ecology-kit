@@ -82,3 +82,9 @@ The local release artifact evidence is:
 - `dist/verification_ecology_kit-1.2.0-py3-none-any.whl`
 - package contents audit decision: `pass`
 - smoke install version: `1.2.0`
+
+## Experimental capacity profile
+
+See [capacity semantics](capacity.md), [capacity formal boundary](capacity_formal.md),
+[interchange](capacity_interchange.md), and [release evidence](capacity_release.md).
+This additive profile does not broaden the established VET-Core formal claim.

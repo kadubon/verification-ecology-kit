@@ -25,5 +25,5 @@ def test_formal_claim_gate_passes() -> None:
     script = _load_claims_script()
     report = script.check_formal_claims()
     assert report.decision == "pass", report.findings
-    assert report.version == "1.2.0"
+    assert report.version == "1.3.0"
     assert report.theorem_count == len(script.REQUIRED_THEOREMS)

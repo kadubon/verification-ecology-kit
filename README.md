@@ -1,5 +1,10 @@
 # verification-ecology-kit
 
+An experimental opt-in [verification-capacity profile](docs/capacity.md) adds finite
+shared-resource allocation, paid model-only verifier development, independent schedule
+checking and explicit residual/work accounting. Try `vek capacity example investment`.
+It does not establish observed service capacity, scientific truth or execution authority.
+
 verification-ecology-kit provides a complete formal operational semantics for the VET-Core implemented by this package, with machine-checked safety theorems and Python conformance tests against the formal semantics.
 
 It is built for a simple problem: verification work often produces more than
