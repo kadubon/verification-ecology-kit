@@ -22,3 +22,9 @@ uv run python examples/authority_gate.py
 The examples are intentionally small. They show the object shape and the
 decision or report produced by the library, without requiring network access or
 external services.
+
+## Experimental capacity profile
+
+See [capacity semantics](capacity.md), [capacity formal boundary](capacity_formal.md),
+[interchange](capacity_interchange.md), and [release evidence](capacity_release.md).
+This additive profile does not broaden the established VET-Core formal claim.

@@ -1,0 +1,564 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verification-ecology-kit.org/schemas/capacity-report.schema.json",
+  "title": "capacity-report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_type",
+    "schema_version",
+    "producer_version",
+    "contract_digest",
+    "source_digest",
+    "snapshot_revision",
+    "scope",
+    "evidence_basis",
+    "time_origin",
+    "slot_seconds",
+    "horizon",
+    "work_unit",
+    "domains",
+    "planning_assumptions",
+    "service_guaranteed_lower_envelope",
+    "observed_service",
+    "local_accounting",
+    "resources",
+    "work",
+    "unsupported_dependence",
+    "forecast",
+    "search",
+    "non_claims"
+  ],
+  "properties": {
+    "record_type": {
+      "const": "vek_verification_capacity_report_v1"
+    },
+    "schema_version": {
+      "const": "1"
+    },
+    "producer_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "contract_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "snapshot_revision": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "evidence_basis": {
+      "const": "declared-model"
+    },
+    "time_origin": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "slot_seconds": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "horizon": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "work_unit": {
+      "const": "registered-check"
+    },
+    "domains": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "minItems": 0,
+      "maxItems": 32
+    },
+    "planning_assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "minItems": 0,
+      "maxItems": 512
+    },
+    "service_guaranteed_lower_envelope": {
+      "type": "null"
+    },
+    "observed_service": {
+      "type": "null"
+    },
+    "local_accounting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "completed",
+        "reserved",
+        "attempts",
+        "consumed",
+        "unfinished",
+        "repair",
+        "elapsed_seconds",
+        "descriptive_completion_rate",
+        "evidence_basis"
+      ],
+      "properties": {
+        "completed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "reserved": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "attempts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "consumed": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "minItems": 1,
+          "maxItems": 8
+        },
+        "unfinished": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "repair": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "minItems": 0,
+          "maxItems": 32
+        },
+        "elapsed_seconds": {
+          "type": "string",
+          "pattern": "^-?[0-9]+(/[1-9][0-9]*)?$",
+          "maxLength": 64
+        },
+        "descriptive_completion_rate": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^-?[0-9]+(/[1-9][0-9]*)?$",
+              "maxLength": 64
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_basis": {
+          "const": "synthetic-or-declared-model"
+        }
+      }
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id",
+          "unit",
+          "kind",
+          "capacity"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "kind": {
+            "enum": [
+              "pool",
+              "budget"
+            ]
+          },
+          "capacity": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "minItems": 1,
+            "maxItems": 16
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 8
+    },
+    "work": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "work_id",
+          "residual_id",
+          "subject_digest",
+          "input_digest",
+          "rule_version",
+          "check",
+          "domain",
+          "bundle",
+          "arrival",
+          "deadline",
+          "protected",
+          "required",
+          "predecessors",
+          "separate_from"
+        ],
+        "properties": {
+          "work_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "residual_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "subject_digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "input_digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "rule_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "check": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "domain": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "bundle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "arrival": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "deadline": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "protected": {
+            "type": "boolean"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "predecessors": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "minItems": 0,
+            "maxItems": 32
+          },
+          "separate_from": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "minItems": 0,
+            "maxItems": 32
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 12
+    },
+    "unsupported_dependence": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "minItems": 0,
+      "maxItems": 32
+    },
+    "forecast": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "objective",
+        "branches",
+        "mandatory_met",
+        "reservations"
+      ],
+      "properties": {
+        "objective": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^-?[0-9]+(/[1-9][0-9]*)?$",
+            "maxLength": 64
+          },
+          "minItems": 1,
+          "maxItems": 12
+        },
+        "branches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "scenario",
+              "completed",
+              "completed_bundles",
+              "missed_deadlines",
+              "repair",
+              "costs",
+              "backlog",
+              "backlog_peak",
+              "unfinished",
+              "mandatory_met"
+            ],
+            "properties": {
+              "scenario": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "completed": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "minItems": 0,
+                "maxItems": 32
+              },
+              "completed_bundles": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "minItems": 0,
+                "maxItems": 32
+              },
+              "missed_deadlines": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "minItems": 0,
+                "maxItems": 32
+              },
+              "repair": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "minItems": 0,
+                "maxItems": 32
+              },
+              "costs": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000000
+                },
+                "minItems": 1,
+                "maxItems": 8
+              },
+              "backlog": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000000
+                },
+                "minItems": 1,
+                "maxItems": 17
+              },
+              "backlog_peak": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "unfinished": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "mandatory_met": {
+                "type": "boolean"
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 8
+        },
+        "mandatory_met": {
+          "type": "boolean"
+        },
+        "reservations": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "minItems": 1,
+            "maxItems": 16
+          },
+          "minItems": 1,
+          "maxItems": 8
+        }
+      }
+    },
+    "search": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "complete",
+        "candidates",
+        "examined",
+        "valid",
+        "budget",
+        "checker_calls",
+        "rejections",
+        "status",
+        "optimality"
+      ],
+      "properties": {
+        "complete": {
+          "type": "boolean"
+        },
+        "candidates": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 582622237229761
+        },
+        "examined": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "valid": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "budget": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "checker_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "rejections": {
+          "type": "object",
+          "maxProperties": 64,
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          }
+        },
+        "status": {
+          "enum": [
+            "feasible",
+            "infeasible",
+            "unknown"
+          ]
+        },
+        "optimality": {
+          "enum": [
+            "finite-catalogue",
+            "checked-incumbent"
+          ]
+        }
+      }
+    },
+    "non_claims": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "minItems": 0,
+      "maxItems": 32
+    }
+  }
+}

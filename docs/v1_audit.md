@@ -104,3 +104,9 @@ path. This is not a claim that the package proves all Verifier Ecology Theory.
 Any future extension that adds a theory term, public schema, formal rule, or CLI
 workflow must update this page and the golden coverage files in the same
 change.
+
+## Experimental capacity profile
+
+See [capacity semantics](capacity.md), [capacity formal boundary](capacity_formal.md),
+[interchange](capacity_interchange.md), and [release evidence](capacity_release.md).
+This additive profile does not broaden the established VET-Core formal claim.

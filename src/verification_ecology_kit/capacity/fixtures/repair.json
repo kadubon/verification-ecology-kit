@@ -1,0 +1,187 @@
+{
+  "contract_id": "example-repair",
+  "scope": "synthetic-capacity",
+  "time_origin": "2026-01-01T00:00:00Z",
+  "slot_seconds": "1/2",
+  "horizon": 3,
+  "max_candidates": 100000,
+  "max_events": 256,
+  "resources": [
+    {
+      "resource_id": "shared-reviewer",
+      "unit": "reviewer-slot",
+      "kind": "pool",
+      "capacity": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "resource_id": "budget",
+      "unit": "cost-unit",
+      "kind": "budget",
+      "capacity": [
+        3
+      ]
+    }
+  ],
+  "services": [
+    {
+      "service_id": "base",
+      "version": "1",
+      "domain": "finite-domain",
+      "checks": [
+        "finite-check"
+      ],
+      "interface": "inert-json-v1",
+      "valid_until": 3,
+      "exposures": [
+        "provider:a",
+        "data:a",
+        "infra:a",
+        "derivation:a"
+      ],
+      "dependence_known": true,
+      "support_refs": [
+        "synthetic-fixture-v1"
+      ],
+      "assumptions": [
+        "finite cases only; no future service guarantee"
+      ],
+      "evidence_basis": "synthetic"
+    },
+    {
+      "service_id": "counter",
+      "version": "1",
+      "domain": "finite-domain",
+      "checks": [
+        "finite-check"
+      ],
+      "interface": "inert-json-v1",
+      "valid_until": 3,
+      "exposures": [
+        "provider:b",
+        "data:b",
+        "infra:b",
+        "derivation:b"
+      ],
+      "dependence_known": true,
+      "support_refs": [
+        "synthetic-counter-v1"
+      ],
+      "assumptions": [
+        "declared exposure separation only"
+      ],
+      "evidence_basis": "synthetic"
+    }
+  ],
+  "work": [
+    {
+      "work_id": "work-0",
+      "residual_id": "res-0",
+      "subject_digest": "e17087ac4625327c112f0a2cf558025c511e45eaa2b7b5c9d22cb950519e6fc0",
+      "input_digest": "e532d3c38ad6cb65344071ffa8bbc28e95bc4a7af863e2ca436b68e92c53c266",
+      "rule_version": "fixture-rule-v1",
+      "check": "finite-check",
+      "domain": "finite-domain",
+      "bundle": "bundle-0",
+      "arrival": 0,
+      "deadline": 3,
+      "protected": false,
+      "required": true,
+      "predecessors": [],
+      "separate_from": []
+    },
+    {
+      "work_id": "work-1",
+      "residual_id": "res-1",
+      "subject_digest": "7af62fee02f9b9024b27c3bc244fa57720779a96334e9d64176f54e3bfb5cf01",
+      "input_digest": "5551d7ad5754cb9ede77b837d098e38b99e45fff4e968dae77a1be7d0a384d9d",
+      "rule_version": "fixture-rule-v1",
+      "check": "finite-check",
+      "domain": "finite-domain",
+      "bundle": "bundle-1",
+      "arrival": 0,
+      "deadline": 3,
+      "protected": false,
+      "required": true,
+      "predecessors": [],
+      "separate_from": []
+    },
+    {
+      "work_id": "work-2",
+      "residual_id": "res-2",
+      "subject_digest": "18fa82b3d28683149b33e835335440abbd5cc61b18f404a5705c47f6393cea28",
+      "input_digest": "7f7d023143f600c7fac0279dff8f29c02ef6225036a639007424beaae441b84e",
+      "rule_version": "fixture-rule-v1",
+      "check": "finite-check",
+      "domain": "finite-domain",
+      "bundle": "bundle-2",
+      "arrival": 0,
+      "deadline": 3,
+      "protected": true,
+      "required": true,
+      "predecessors": [],
+      "separate_from": []
+    }
+  ],
+  "actions": [
+    {
+      "action_id": "action-0",
+      "work_id": "work-0",
+      "service_id": "base",
+      "kind": "check",
+      "duration": 1,
+      "costs": [
+        1,
+        1
+      ],
+      "requires_success": [],
+      "requires_negative": []
+    },
+    {
+      "action_id": "action-1",
+      "work_id": "work-1",
+      "service_id": "base",
+      "kind": "repair",
+      "duration": 1,
+      "costs": [
+        1,
+        1
+      ],
+      "requires_success": [],
+      "requires_negative": [
+        "action-0"
+      ]
+    },
+    {
+      "action_id": "action-2",
+      "work_id": "work-2",
+      "service_id": "base",
+      "kind": "check",
+      "duration": 1,
+      "costs": [
+        1,
+        1
+      ],
+      "requires_success": [],
+      "requires_negative": []
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "declared-joint",
+      "outcomes": [
+        "negative",
+        "positive",
+        "positive"
+      ],
+      "assumption": "synthetic finite outcome vector"
+    }
+  ],
+  "schema_version": "vek.capacity.contract.v1",
+  "semantics": "nonpreemptive-integer-slots",
+  "work_unit": "registered-check",
+  "observation_policy": "replan-after-admitted-result"
+}

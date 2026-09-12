@@ -148,3 +148,9 @@ Lean, nor a verified extraction path.
 residual routing and quarantine before internalization. It is useful review
 material, but the release-blocking proof gate is Lean plus the Python formal
 coverage and claim checks.
+
+## Experimental capacity profile
+
+See [capacity semantics](capacity.md), [capacity formal boundary](capacity_formal.md),
+[interchange](capacity_interchange.md), and [release evidence](capacity_release.md).
+This additive profile does not broaden the established VET-Core formal claim.

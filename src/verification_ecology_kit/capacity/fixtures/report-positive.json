@@ -1,0 +1,192 @@
+{
+  "record_type": "vek_verification_capacity_report_v1",
+  "schema_version": "1",
+  "producer_version": "1.3.0",
+  "contract_digest": "f39222ea4a0cd9de7329977571cb38792a02d789f5e13bd1b736f2e692b77b02",
+  "source_digest": "08f4049417b903584c0c493a3a2a075b3bc20f4beec621a28845e18d800b8631",
+  "snapshot_revision": 0,
+  "scope": "synthetic-capacity",
+  "evidence_basis": "declared-model",
+  "time_origin": "2026-01-01T00:00:00Z",
+  "slot_seconds": "1/2",
+  "horizon": 3,
+  "work_unit": "registered-check",
+  "domains": [
+    "finite-domain"
+  ],
+  "planning_assumptions": [
+    "finite cases only; no future service guarantee",
+    "declared exposure separation only"
+  ],
+  "service_guaranteed_lower_envelope": null,
+  "observed_service": null,
+  "local_accounting": {
+    "completed": 0,
+    "reserved": 0,
+    "attempts": 0,
+    "consumed": [
+      0,
+      0
+    ],
+    "unfinished": 3,
+    "repair": [],
+    "elapsed_seconds": "0",
+    "descriptive_completion_rate": null,
+    "evidence_basis": "synthetic-or-declared-model"
+  },
+  "resources": [
+    {
+      "resource_id": "shared-reviewer",
+      "unit": "reviewer-slot",
+      "kind": "pool",
+      "capacity": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "resource_id": "budget",
+      "unit": "cost-unit",
+      "kind": "budget",
+      "capacity": [
+        3
+      ]
+    }
+  ],
+  "work": [
+    {
+      "work_id": "work-0",
+      "residual_id": "res-0",
+      "subject_digest": "e17087ac4625327c112f0a2cf558025c511e45eaa2b7b5c9d22cb950519e6fc0",
+      "input_digest": "e532d3c38ad6cb65344071ffa8bbc28e95bc4a7af863e2ca436b68e92c53c266",
+      "rule_version": "fixture-rule-v1",
+      "check": "finite-check",
+      "domain": "finite-domain",
+      "bundle": "bundle-0",
+      "arrival": 0,
+      "deadline": 3,
+      "protected": false,
+      "required": true,
+      "predecessors": [],
+      "separate_from": []
+    },
+    {
+      "work_id": "work-1",
+      "residual_id": "res-1",
+      "subject_digest": "7af62fee02f9b9024b27c3bc244fa57720779a96334e9d64176f54e3bfb5cf01",
+      "input_digest": "5551d7ad5754cb9ede77b837d098e38b99e45fff4e968dae77a1be7d0a384d9d",
+      "rule_version": "fixture-rule-v1",
+      "check": "finite-check",
+      "domain": "finite-domain",
+      "bundle": "bundle-1",
+      "arrival": 0,
+      "deadline": 3,
+      "protected": false,
+      "required": true,
+      "predecessors": [],
+      "separate_from": []
+    },
+    {
+      "work_id": "work-2",
+      "residual_id": "res-2",
+      "subject_digest": "18fa82b3d28683149b33e835335440abbd5cc61b18f404a5705c47f6393cea28",
+      "input_digest": "7f7d023143f600c7fac0279dff8f29c02ef6225036a639007424beaae441b84e",
+      "rule_version": "fixture-rule-v1",
+      "check": "finite-check",
+      "domain": "finite-domain",
+      "bundle": "bundle-2",
+      "arrival": 0,
+      "deadline": 3,
+      "protected": true,
+      "required": true,
+      "predecessors": [],
+      "separate_from": []
+    }
+  ],
+  "unsupported_dependence": [],
+  "forecast": {
+    "objective": [
+      "1",
+      "1",
+      "9",
+      "0",
+      "-3",
+      "-3"
+    ],
+    "branches": [
+      {
+        "scenario": "declared-joint",
+        "completed": [
+          "work-0",
+          "work-1",
+          "work-2"
+        ],
+        "completed_bundles": [
+          [
+            "finite-domain",
+            "bundle-0"
+          ],
+          [
+            "finite-domain",
+            "bundle-1"
+          ],
+          [
+            "finite-domain",
+            "bundle-2"
+          ]
+        ],
+        "missed_deadlines": [],
+        "repair": [],
+        "costs": [
+          3,
+          3
+        ],
+        "backlog": [
+          3,
+          2,
+          1,
+          0
+        ],
+        "backlog_peak": 3,
+        "unfinished": 0,
+        "mandatory_met": true
+      }
+    ],
+    "mandatory_met": true,
+    "reservations": [
+      [
+        1,
+        1,
+        1
+      ],
+      [
+        0,
+        0,
+        0
+      ]
+    ]
+  },
+  "search": {
+    "complete": true,
+    "candidates": 64,
+    "examined": 64,
+    "valid": 34,
+    "budget": 100000,
+    "checker_calls": 65,
+    "rejections": {
+      "shared pool exceeded: shared-reviewer": 30
+    },
+    "status": "feasible",
+    "optimality": "finite-catalogue"
+  },
+  "non_claims": [
+    "no execution authority",
+    "no scientific truth or capability growth",
+    "no empirical independence",
+    "no service guarantee from observed averages",
+    "no global scheduling optimum",
+    "no infinite-horizon stability",
+    "Python conformance-tested, not wholly formally verified"
+  ]
+}

@@ -83,3 +83,9 @@ When a gate fails, do one of the following:
 
 Do not hide a failed gate by changing the command, lowering a threshold, or
 removing the affected check without adding a replacement.
+
+## Experimental capacity profile
+
+See [capacity semantics](capacity.md), [capacity formal boundary](capacity_formal.md),
+[interchange](capacity_interchange.md), and [release evidence](capacity_release.md).
+This additive profile does not broaden the established VET-Core formal claim.

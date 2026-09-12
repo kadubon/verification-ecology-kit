@@ -32,6 +32,12 @@ class RuntimeEngine:
     generator: PacketGenerator = field(default_factory=DefaultPacketGenerator)
     policy: RuntimePolicy = field(default_factory=DefaultRuntimePolicy)
 
+    def capacity(self, contract: Any) -> Any:
+        """Select the experimental opt-in capacity profile; does not run work."""
+        from verification_ecology_kit.capacity.runtime import CapacityRuntime
+
+        return CapacityRuntime(self.store, contract)
+
     def run_once(self) -> RuntimeReport:
         state = self.store.load()
         report = RuntimeReport()

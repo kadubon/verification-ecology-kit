@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verification-ecology-kit.org/schemas/capacity-result.schema.json",
+  "title": "capacity-result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "result_id",
+    "action_id",
+    "work_id",
+    "subject_digest",
+    "input_digest",
+    "service_id",
+    "service_version",
+    "interface",
+    "attempt",
+    "outcome",
+    "costs",
+    "start",
+    "end",
+    "completed_work",
+    "evidence_basis",
+    "support_refs",
+    "contract_digest",
+    "scope"
+  ],
+  "properties": {
+    "result_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "action_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "work_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "subject_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "input_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "service_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "service_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "interface": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "outcome": {
+      "enum": [
+        "positive",
+        "negative",
+        "inconclusive",
+        "invalid",
+        "timeout"
+      ]
+    },
+    "costs": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 1000000
+      },
+      "minItems": 1,
+      "maxItems": 8
+    },
+    "start": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "end": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "completed_work": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "evidence_basis": {
+      "enum": [
+        "synthetic",
+        "declared-model",
+        "observed-record"
+      ]
+    },
+    "support_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "minItems": 1,
+      "maxItems": 32
+    },
+    "contract_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    }
+  }
+}
