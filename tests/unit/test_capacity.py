@@ -275,8 +275,12 @@ def test_report_and_pinned_companion_contract():
     assert cait_envelope(report)["arrival_verdict"] is None
     assert len(ccr_proposals(c, revision="ccr-revision-1", pool_ids=["pool", "budget"])) == 3
     longer = replace(c, slot_seconds="61")
-    assert ccr_proposals(longer, revision="1", pool_ids=["p", "b"])[0]["constraints"][
-        "max_runtime_minutes"] == 2
+    assert (
+        ccr_proposals(longer, revision="1", pool_ids=["p", "b"])[0]["constraints"][
+            "max_runtime_minutes"
+        ]
+        == 2
+    )
     with pytest.raises(ValueError, match="duration exceeds"):
         ccr_proposals(replace(c, slot_seconds="1000000"), revision="1", pool_ids=["p", "b"])
     with pytest.raises(ValueError):
