@@ -3,18 +3,22 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any
+from typing import Any, cast
 
 from verification_ecology_kit.capacity.checker import Snapshot, check_plan
 from verification_ecology_kit.capacity.model import Contract, digest, require
 from verification_ecology_kit.capacity.reducer import replay
 from verification_ecology_kit.capacity.selector import plan
 from verification_ecology_kit.model.conformance import ConformanceEngine, VetBundle
-from verification_ecology_kit.model.records import ConformanceProfile, ResidualKind
+from verification_ecology_kit.model.packets import CounterPacket
+from verification_ecology_kit.model.records import ConformanceProfile, ResidualKind, Visibility
 from verification_ecology_kit.model.residuals import ResidualRecord
+from verification_ecology_kit.ports.generator import PacketGenerator
+from verification_ecology_kit.ports.policy import RuntimePolicy
 from verification_ecology_kit.ports.storage import EcologyStore
 from verification_ecology_kit.references import ObjectEnvelope, SchemaCatalogue
 from verification_ecology_kit.runtime.loop import DefaultPacketGenerator
+from verification_ecology_kit.runtime.policies import DefaultRuntimePolicy
 
 
 class CapacityRuntime:
@@ -24,8 +28,17 @@ class CapacityRuntime:
     No method dispatches tools, grants authority or discharges source residuals.
     """
 
-    def __init__(self, store: EcologyStore, contract: Contract):
+    def __init__(
+        self,
+        store: EcologyStore,
+        contract: Contract,
+        *,
+        generator: PacketGenerator | None = None,
+        policy: RuntimePolicy | None = None,
+    ):
         self.store, self.contract = store, contract
+        self.generator = generator if generator is not None else DefaultPacketGenerator()
+        self.policy = policy if policy is not None else DefaultRuntimePolicy()
 
     def _load(self) -> tuple[list[dict[str, Any]], Snapshot]:
         archive = self.store.load().archive.get("capacity_v1", {})
@@ -96,6 +109,7 @@ class CapacityRuntime:
             )
             state.residual_ledger.add(repair, justification="capacity negative check repair")
         generated = state.archive.get("capacity_followups_v1", {})
+        appended = [*events, event]
         for wid in after.completed.keys() - before.completed.keys():
             work = next(w for w in self.contract.work if w.work_id == wid)
             key = digest(
@@ -109,16 +123,50 @@ class CapacityRuntime:
             )
             if key not in generated:
                 residual = state.residual_ledger.residuals[work.residual_id]
-                packets = DefaultPacketGenerator().from_residual(residual)
+                packets = self.generator.from_residual(residual)
+                require(
+                    len(packets) <= 1, "finite profile permits one follow-up per registered check"
+                )
                 for packet in packets:
                     packet.ensure_core_accountability()
                     packet.ensure_semantic_accountability()
+                    cast(CounterPacket, CounterPacket.minimal()).inspect_target(packet)
+                    results = packet.validate()
+                    if (
+                        self.policy.should_quarantine(packet)
+                        and packet.circulation_status is not None
+                    ):
+                        packet.circulation_status.visibility = Visibility.QUARANTINED
+                    state.history.append(
+                        "capacity_followup_checks",
+                        {
+                            "packet_id": packet.packet_id,
+                            "checks": [x.to_dict() for x in results],
+                            "authority_effect": "none",
+                        },
+                    )
                     state.add_packet(packet)
+                    appended.append(
+                        {
+                            "event_id": "followup-" + key,
+                            "revision": after.revision,
+                            "kind": "followup",
+                            "payload": {
+                                "work_id": "followup-" + key,
+                                "subject_digest": digest(packet.to_dict()),
+                                "source_residual": work.residual_id,
+                                "rule_version": work.rule_version,
+                                "arrival": after.clock,
+                                "parent_work": wid,
+                            },
+                        }
+                    )
+                    after = replay(self.contract, appended)
                 generated[key] = [p.packet_id for p in packets]
         state.archive["capacity_followups_v1"] = generated
         state.archive["capacity_v1"] = {
             "contract_digest": self.contract.contract_digest,
-            "events": [*events, event],
+            "events": appended,
         }
         state.history.append(
             "capacity_event",

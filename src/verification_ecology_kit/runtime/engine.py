@@ -36,7 +36,7 @@ class RuntimeEngine:
         """Select the experimental opt-in capacity profile; does not run work."""
         from verification_ecology_kit.capacity.runtime import CapacityRuntime
 
-        return CapacityRuntime(self.store, contract)
+        return CapacityRuntime(self.store, contract, generator=self.generator, policy=self.policy)
 
     def run_once(self) -> RuntimeReport:
         state = self.store.load()

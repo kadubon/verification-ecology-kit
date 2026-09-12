@@ -16,8 +16,9 @@ proof compilation. Explicit target compilation exposed existing errors, subseque
 fixed without changing theorem statements or predicates. The full VET-Core import
 closure and new CapacityCore now build under the pinned Lean 4.12.0 toolchain.
 
-Local validation: 219 tests passed on Windows/Python 3.13; statement coverage
-95.86%, branch coverage 85.82%, combined coverage 93.64% (92% combined gate).
+Local validation: 221 tests passed on Windows with each of Python 3.11, 3.12 and
+3.13; Python 3.13 statement coverage 95.89%, branch coverage 85.87%, combined
+coverage 93.68% (92% combined gate).
 All six selected faults were killed. Strict typing/lint, metaschema checks, generated
 docs/fixtures drift, strict MkDocs, source/archive scans, Bandit, dependency audit,
 Zizmor, formal coverage/claims and pinned Lean compilation passed. The built wheel

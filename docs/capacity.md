@@ -81,7 +81,8 @@ exhaustive oracle checks matched finite instances in property tests.
 
 Plan/inspect/compare/export are read-only. `apply-local` explicitly records reservations;
 it does not dispatch work. Event kinds are `apply`, `tick`, `dispatch`, `result`, `cancel`
-and `withdraw`. Dispatch records host-supplied work state; it does not invoke tools.
+and `withdraw`, plus internally emitted `followup` arrivals. Dispatch records
+host-supplied work state; it does not invoke tools.
 Unknown dispatched work retains reservations until reconciliation. Passing time does
 not credit completion; an overdue unknown dispatch conservatively holds its pool for
 the rest of the finite horizon. Cancellation removes an unstarted attempt while
@@ -102,6 +103,15 @@ Follow-up packets use the existing generator and accountability hooks, deduplica
 by source/content/rule/check. Follow-up generation never credits extra service or
 discharges the source residual. The capacity state is archived alongside existing
 ecology state. A changed contract requires a distinct namespace, not overwriting history.
+
+The host generator and quarantine policy are retained. Each generated artifact also
+creates one explicit follow-up arrival in capacity replay, bound to its actual digest.
+Unallocated follow-ups appear in backlog, unfinished work and report/CCR export; they
+are not silently counted as verified. This closed finite profile does not invent their
+cost/quality contract. The host must register those bounds before subsequent allocation
+and carry forward remaining budgets/reservations; a new namespace is not a budget reset.
+The registered-bundle feasibility result is not a claim that this new follow-up queue
+is empty. One generated follow-up per registered check is the supported finite bound.
 
 `JsonStore` writes a temporary whole-state file then atomically replaces its target.
 The host must serialize one writer across load/check/save. This is neither a durable

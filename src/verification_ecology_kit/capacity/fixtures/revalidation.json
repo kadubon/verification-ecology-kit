@@ -35,7 +35,7 @@
         "finite-check"
       ],
       "interface": "inert-json-v1",
-      "valid_until": 3,
+      "valid_until": 0,
       "exposures": [
         "provider:a",
         "data:a",

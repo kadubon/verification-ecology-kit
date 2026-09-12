@@ -137,6 +137,7 @@ def scenario(name: str) -> tuple[Contract, VerifierEcologyState]:
         actions[1] = replace(actions[1], kind="repair", requires_negative=("action-0",))
     if name == "revalidation":
         services = (*services, replace(services[0], service_id="renewed", version="2"))
+        services = (replace(services[0], valid_until=0), *services[1:])
         actions[0] = replace(actions[0], kind="calibrate", service_id="counter")
         work[0] = replace(work[0], required=False)
         actions[1:] = [

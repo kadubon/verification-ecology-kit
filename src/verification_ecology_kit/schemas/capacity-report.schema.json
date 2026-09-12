@@ -25,6 +25,7 @@
     "resources",
     "work",
     "unsupported_dependence",
+    "pending_followup_work",
     "forecast",
     "search",
     "non_claims"
@@ -337,6 +338,54 @@
       "minItems": 0,
       "maxItems": 32
     },
+    "pending_followup_work": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "work_id",
+          "subject_digest",
+          "source_residual",
+          "rule_version",
+          "arrival",
+          "parent_work"
+        ],
+        "properties": {
+          "work_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "subject_digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "source_residual": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "rule_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "arrival": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "parent_work": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 12
+    },
     "forecast": {
       "type": "object",
       "additionalProperties": false,
@@ -344,7 +393,8 @@
         "objective",
         "branches",
         "mandatory_met",
-        "reservations"
+        "reservations",
+        "unallocated_followups"
       ],
       "properties": {
         "objective": {
@@ -480,6 +530,16 @@
           },
           "minItems": 1,
           "maxItems": 8
+        },
+        "unallocated_followups": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "minItems": 0,
+          "maxItems": 12
         }
       }
     },

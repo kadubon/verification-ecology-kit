@@ -89,6 +89,29 @@ def reduce_event(c: Contract, previous: Snapshot, kind: str, p: dict[str, Any]) 
             s.attempts[aid] = s.attempts.get(aid, 0) + 1
     elif kind == "result":
         _result(c, s, p)
+    elif kind == "followup":
+        require(
+            set(p)
+            == {
+                "work_id",
+                "subject_digest",
+                "source_residual",
+                "rule_version",
+                "arrival",
+                "parent_work",
+            },
+            "invalid follow-up fields",
+        )
+        require(p["parent_work"] in s.completed, "follow-up parent not completed")
+        require(
+            p["source_residual"] == works[p["parent_work"]].residual_id,
+            "follow-up source substitution",
+        )
+        require(p["arrival"] == s.clock, "follow-up arrival mismatch")
+        key = p["work_id"]
+        require(key not in s.followups or s.followups[key] == p, "conflicting follow-up identity")
+        require(key in s.followups or len(s.followups) < len(c.work), "follow-up bound exceeded")
+        s.followups[key] = deepcopy(p)
     else:
         raise ValueError("unsupported event kind")
     return s

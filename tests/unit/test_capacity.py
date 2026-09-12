@@ -16,7 +16,10 @@ from verification_ecology_kit.capacity.reducer import reduce_event, replay, synt
 from verification_ecology_kit.capacity.report import capacity_report
 from verification_ecology_kit.capacity.runtime import CapacityRuntime
 from verification_ecology_kit.capacity.selector import plan
+from verification_ecology_kit.model.records import Visibility
+from verification_ecology_kit.runtime.engine import RuntimeEngine
 from verification_ecology_kit.runtime.in_memory import InMemoryStore
+from verification_ecology_kit.runtime.loop import DefaultPacketGenerator
 
 
 def setup(name="negative"):
@@ -34,6 +37,8 @@ def test_installed_native_scenarios(name):
         assert result["snapshot"]["completed"]["work-2"] == "negative"
         assert result["snapshot"]["repair"] == ["work-2"]
         assert len(result["residuals"]) == 4
+        assert len(result["snapshot"]["followups"]) == 3
+        assert result["capacity_report"]["local_accounting"]["unfinished"] == 3
     if name == "investment":
         assert "work-4" in result["snapshot"]["completed"]
         assert "action-3" in result["plan"]["schedule"]
@@ -51,6 +56,7 @@ def test_installed_native_scenarios(name):
         ("horizon", True),
         ("horizon", -1),
         ("horizon", 1.5),
+        ("horizon", 1.0),
         ("horizon", 1000),
         ("slot_seconds", "0"),
         ("slot_seconds", "1/0"),
@@ -268,6 +274,11 @@ def test_report_and_pinned_companion_contract():
     assert report["service_guaranteed_lower_envelope"] is None
     assert cait_envelope(report)["arrival_verdict"] is None
     assert len(ccr_proposals(c, revision="ccr-revision-1", pool_ids=["pool", "budget"])) == 3
+    longer = replace(c, slot_seconds="61")
+    assert ccr_proposals(longer, revision="1", pool_ids=["p", "b"])[0]["constraints"][
+        "max_runtime_minutes"] == 2
+    with pytest.raises(ValueError, match="duration exceeds"):
+        ccr_proposals(replace(c, slot_seconds="1000000"), revision="1", pool_ids=["p", "b"])
     with pytest.raises(ValueError):
         ccr_proposals(c, revision="1", pool_ids=[], schema_version="unknown")
     with pytest.raises(ValueError):
@@ -311,3 +322,30 @@ def test_success_prerequisite_and_completed_work_cannot_be_rescheduled():
     s = reduce_event(c, r.inspect(), "tick", {"slot": 1})
     with pytest.raises(ValueError, match="reversal"):
         reduce_event(c, s, "tick", {"slot": 0})
+
+
+def test_capacity_respects_host_generator_and_quarantine_policy():
+    c, ecology = scenario("negative")
+    calls = []
+
+    class Generator:
+        def from_residual(self, residual):
+            calls.append(residual.residual_id)
+            return DefaultPacketGenerator().from_residual(residual)
+
+    class Policy:
+        def should_quarantine(self, packet):
+            return True
+
+    runtime = RuntimeEngine(InMemoryStore(ecology), Generator(), Policy()).capacity(c)
+    allocation = runtime.plan()
+    runtime.event("apply", allocation, "apply")
+    aid = next(a for a, start in allocation["schedule"].items() if start == 0)
+    runtime.event("dispatch", {"action_id": aid, "reason": "fixture"}, "dispatch")
+    result = synthetic_result(c, runtime.inspect(), aid, "positive")
+    runtime.event("tick", {"slot": 1}, "tick")
+    runtime.event("result", result, "result")
+    assert len(calls) == 1
+    packet = next(iter(runtime.store.load().packet_population.values()))
+    assert packet.circulation_status.visibility == Visibility.QUARANTINED
+    assert runtime.store.load().residual_ledger.residuals[calls[0]].status.value == "active"

@@ -16,6 +16,10 @@ bounds, deadline slot, CCR revision and pool IDs. Extensions are proposals, not 
 that CCR's base schema enforces these extensions. Unknown versions fail closed.
 CCR owns leases, approval, atomic reservations, execution and reward. VEK does not
 access CCR storage, issue approvals or impose an unconditional package dependency.
+Exact duration bounds are rounded upward to CCR's integer-minute coordinate; durations
+outside its 1,440-minute schema bound fail closed. Typed units and eligible service
+alternatives remain explicit VEK extensions. A CCR verifier-registry binding is not
+invented: these tasks require custom admission to enforce the registered VEK checks.
 
 ```text
 vek capacity export contract.json --store ecology.json --format ccr --ccr-revision REV --ccr-pool POOL --ccr-pool BUDGET

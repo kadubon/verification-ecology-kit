@@ -42,7 +42,8 @@
         "objective",
         "branches",
         "mandatory_met",
-        "reservations"
+        "reservations",
+        "unallocated_followups"
       ],
       "properties": {
         "objective": {
@@ -178,6 +179,16 @@
           },
           "minItems": 1,
           "maxItems": 8
+        },
+        "unallocated_followups": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "minItems": 0,
+          "maxItems": 12
         }
       }
     },

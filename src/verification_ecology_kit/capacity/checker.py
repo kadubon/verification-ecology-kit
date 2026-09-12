@@ -30,6 +30,7 @@ class Snapshot:
     results: dict[str, str] = field(default_factory=dict)
     completed_actions: dict[str, str] = field(default_factory=dict)
     completion_times: dict[str, int] = field(default_factory=dict)
+    followups: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -48,6 +49,7 @@ class Checked:
     branches: tuple[dict[str, Any], ...]
     mandatory_met: bool
     reservations: tuple[tuple[int, ...], ...]
+    unallocated_followups: tuple[str, ...]
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -55,6 +57,7 @@ class Checked:
             "branches": list(self.branches),
             "mandatory_met": self.mandatory_met,
             "reservations": [list(x) for x in self.reservations],
+            "unallocated_followups": list(self.unallocated_followups),
         }
 
 
@@ -220,7 +223,12 @@ def check_schedule(c: Contract, s: Snapshot, schedule: dict[str, int]) -> Checke
         for t in range(c.horizon + 1):
             arrived = sum(w.arrival <= t for w in c.work)
             done = sum(ends.get(w.work_id, c.horizon + 1) <= t for w in c.work)
-            trace.append(arrived - done - sum(works[x].arrival <= t for x in s.cancelled))
+            trace.append(
+                arrived
+                - done
+                - sum(works[x].arrival <= t for x in s.cancelled)
+                + sum(item["arrival"] <= t for item in s.followups.values())
+            )
         branches.append(
             {
                 "scenario": scenario.scenario_id,
@@ -231,7 +239,7 @@ def check_schedule(c: Contract, s: Snapshot, schedule: dict[str, int]) -> Checke
                 "costs": costs,
                 "backlog": trace,
                 "backlog_peak": max(trace),
-                "unfinished": len(c.work) - len(completed) - len(s.cancelled),
+                "unfinished": len(c.work) - len(completed) - len(s.cancelled) + len(s.followups),
                 "mandatory_met": protected_done == len(required),
             }
         )
@@ -240,6 +248,7 @@ def check_schedule(c: Contract, s: Snapshot, schedule: dict[str, int]) -> Checke
         tuple(branches),
         all(b["mandatory_met"] for b in branches),
         tuple(tuple(row) for row in occupancy),
+        tuple(sorted(s.followups)),
     )
 
 

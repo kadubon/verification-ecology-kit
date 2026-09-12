@@ -17,7 +17,7 @@ def project(c: Contract, s: Snapshot, coordinate: int) -> dict[str, int]:
         if a.action_id in s.reservations
     )
     return {
-        "unfinished": len(c.work) - len(s.completed),
+        "unfinished": len(c.work) - len(s.completed) + len(s.followups),
         "completed": len(s.completed),
         "available": sum(r.capacity) - s.spent[coordinate] - reserved,
         "reserved": reserved,
@@ -39,6 +39,7 @@ def trace(c: Contract, events: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "before": before,
                 "after": after,
                 "source_residuals": [w.residual_id for w in c.work],
+                "arrivals": len(current.followups) - len(previous.followups),
             }
             evaluate(row)
             rows.append(row)
@@ -54,8 +55,13 @@ def evaluate(row: dict[str, Any]) -> None:
         "negative/noninteger formal quantity",
     )
     require(
-        before["unfinished"] + before["completed"] == after["unfinished"] + after["completed"],
+        before["unfinished"] + before["completed"] + row["arrivals"]
+        == after["unfinished"] + after["completed"],
         "work conservation failure",
+    )
+    require(
+        row["arrivals"] in {0, 1} and (row["event"] == "followup" or row["arrivals"] == 0),
+        "unregistered arrival",
     )
     require(
         sum(before[x] for x in ("available", "reserved", "consumed"))

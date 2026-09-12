@@ -55,6 +55,8 @@ def main() -> None:
         if row["event"] == "apply":
             amount = after["reserved"] - before["reserved"]
             expression = f"reserve before{index} {amount}"
+        elif row["event"] == "followup":
+            expression = f"some (followup before{index} {row['arrivals']})"
         elif row["event"] == "result":
             units = after["completed"] - before["completed"]
             cost = after["consumed"] - before["consumed"]

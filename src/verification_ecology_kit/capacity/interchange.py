@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+from fractions import Fraction
 from importlib.resources import files
+from math import ceil
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -27,6 +29,9 @@ def ccr_proposals(
     proposals = []
     for w in c.work:
         actions = [a for a in c.actions if a.work_id == w.work_id]
+        require(bool(actions), "no registered action mapping for CCR task")
+        minutes = max(1, ceil(max(a.duration for a in actions) * Fraction(c.slot_seconds) / 60))
+        require(minutes <= 1440, "duration exceeds pinned CCR task bounds")
         task = {
             "schema_version": schema_version,
             "task_id": f"vek-{w.work_id}",
@@ -50,11 +55,11 @@ def ccr_proposals(
                 "side_effect_policy": "operator_approval_required",
                 "network_policy": "none",
                 "authority_policy": "read_only",
-                "max_runtime_minutes": 1,
+                "max_runtime_minutes": minutes,
             },
-            "lease": {"lease_required": True, "ttl_minutes": 1},
+            "lease": {"lease_required": True, "ttl_minutes": minutes},
             "verifier_plan": {
-                "required_verifiers": sorted({a.service_id for a in actions}),
+                "required_verifiers": [],
                 "promotion_gate": "custom",
                 "failure_route": "repair_task",
             },
@@ -78,12 +83,21 @@ def ccr_proposals(
                     "required_check": w.check,
                     "separate_from": list(w.separate_from),
                     "cost_bounds": [list(a.costs) for a in actions],
+                    "eligible_services": sorted({a.service_id for a in actions}),
+                    "resource_units": [r.unit for r in c.resources],
+                    "resource_kinds": [r.kind for r in c.resources],
                     "expiry_slot": w.deadline,
                     "slot_seconds": c.slot_seconds,
                     "ccr_revision": revision,
                     "ccr_pool_ids": pool_ids,
                     "schema_commit": CCR_COMMIT,
-                    "unsupported": ["atomic reservation", "lease admission", "reward", "approval"],
+                    "unsupported": [
+                        "atomic reservation",
+                        "lease admission",
+                        "reward",
+                        "approval",
+                        "CCR verifier-registry binding; requires custom admission",
+                    ],
                 }
             },
         }

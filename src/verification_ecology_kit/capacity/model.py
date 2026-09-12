@@ -192,6 +192,16 @@ class Contract:
 
 
 def validate_schema(name: str, value: Any) -> None:
+    def exact_numbers(item: Any) -> None:
+        require(not isinstance(item, float), "floating-point quantities are unsupported")
+        if isinstance(item, dict):
+            for child in item.values():
+                exact_numbers(child)
+        elif isinstance(item, (list, tuple)):
+            for child in item:
+                exact_numbers(child)
+
+    exact_numbers(value)
     schema = json.loads(
         files("verification_ecology_kit")
         .joinpath("schemas", f"{name}.schema.json")

@@ -74,6 +74,10 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     if command == "ingest":
         return runtime.update(load(args.event)).to_dict()
     if args.format == "ccr":
-        return {"proposals": ccr_proposals(c, revision=args.ccr_revision, pool_ids=args.ccr_pool)}
+        return {
+            "proposals": ccr_proposals(c, revision=args.ccr_revision, pool_ids=args.ccr_pool),
+            "unallocated_followups": list(runtime.inspect().followups.values()),
+            "followup_limitation": "new artifact checks require registered cost/quality bounds",
+        }
     report = capacity_report(c, runtime.inspect(), runtime.plan())
     return cait_envelope(report) if args.format == "cait" else report

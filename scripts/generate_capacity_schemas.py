@@ -115,6 +115,7 @@ def main() -> None:
         branches=array(branch, 8, 1),
         mandatory_met=BOOL,
         reservations=array(array(NAT, 16, 1), 8, 1),
+        unallocated_followups=array(TEXT, 12),
     )
     search = obj(
         complete=BOOL,
@@ -166,6 +167,17 @@ def main() -> None:
         resources=contract["properties"]["resources"],
         work=array(work, 12, 1),
         unsupported_dependence=array(TEXT),
+        pending_followup_work=array(
+            obj(
+                work_id=TEXT,
+                subject_digest=DIGEST,
+                source_residual=TEXT,
+                rule_version=TEXT,
+                arrival=NAT,
+                parent_work=TEXT,
+            ),
+            12,
+        ),
         forecast=checked,
         search=search,
         non_claims=array(TEXT),

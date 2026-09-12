@@ -35,9 +35,17 @@ def after7 : State := { unfinished := 2, completed := 1, available := 0, reserve
 example : (finish before7 0 1 1 []).bind (fun s => releaseUnused s 0) = some after7 := by decide
 
 def before8 : State := { unfinished := 2, completed := 1, available := 1, reserved := 2, consumed := 0, authority := 0, residuals := [0, 1, 2], seen := [0] }
-def after8 : State := { unfinished := 2, completed := 1, available := 1, reserved := 2, consumed := 0, authority := 0, residuals := [0, 1, 2], seen := [0] }
-example : (finish before8 0 0 0 []).bind (fun s => releaseUnused s 0) = some after8 := by decide
+def after8 : State := { unfinished := 3, completed := 1, available := 1, reserved := 2, consumed := 0, authority := 0, residuals := [0, 1, 2], seen := [0] }
+example : some (followup before8 1) = some after8 := by decide
 
 def before9 : State := { unfinished := 2, completed := 1, available := 0, reserved := 2, consumed := 1, authority := 0, residuals := [0, 1, 2], seen := [0] }
-def after9 : State := { unfinished := 2, completed := 1, available := 0, reserved := 2, consumed := 1, authority := 0, residuals := [0, 1, 2], seen := [0] }
-example : (finish before9 0 0 0 []).bind (fun s => releaseUnused s 0) = some after9 := by decide
+def after9 : State := { unfinished := 3, completed := 1, available := 0, reserved := 2, consumed := 1, authority := 0, residuals := [0, 1, 2], seen := [0] }
+example : some (followup before9 1) = some after9 := by decide
+
+def before10 : State := { unfinished := 3, completed := 1, available := 1, reserved := 2, consumed := 0, authority := 0, residuals := [0, 1, 2], seen := [0] }
+def after10 : State := { unfinished := 3, completed := 1, available := 1, reserved := 2, consumed := 0, authority := 0, residuals := [0, 1, 2], seen := [0] }
+example : (finish before10 0 0 0 []).bind (fun s => releaseUnused s 0) = some after10 := by decide
+
+def before11 : State := { unfinished := 3, completed := 1, available := 0, reserved := 2, consumed := 1, authority := 0, residuals := [0, 1, 2], seen := [0] }
+def after11 : State := { unfinished := 3, completed := 1, available := 0, reserved := 2, consumed := 1, authority := 0, residuals := [0, 1, 2], seen := [0] }
+example : (finish before11 0 0 0 []).bind (fun s => releaseUnused s 0) = some after11 := by decide
