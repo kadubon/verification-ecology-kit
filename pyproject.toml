@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "verification-ecology-kit"
-version = "1.2.0"
+version = "1.3.0"
 description = "Python toolkit for verification auditing, residual ledgers, conformance checks, and verifier packet workflows."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -42,6 +42,7 @@ dev = [
   "build>=1.2.1",
   "check-jsonschema>=0.29.0",
   "detect-secrets>=1.5.0",
+  "defusedxml>=0.7.1",
   "hypothesis>=6.100",
   "mkdocs>=1.6.0",
   "mypy>=1.10",

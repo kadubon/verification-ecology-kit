@@ -56,6 +56,17 @@ REQUIRED_THEOREMS = (
     "aperture_loss_requires_debt",
     "missing_schema_field_can_residualize",
     "anti_overclosure_overclosure_blocked",
+    "reservation_conserves",
+    "shared_pool_bounded",
+    "completion_conserves",
+    "nonnegative_remaining",
+    "no_completion_before_predecessors",
+    "completion_preserves_authority_residuals",
+    "duplicate_result_no_credit",
+    "followup_preserves_source",
+    "model_activation_no_authority",
+    "release_conserves",
+    "reservation_no_completion",
 )
 
 FORBIDDEN_CLAIMS = (
@@ -102,8 +113,9 @@ def check_formal_claims() -> FormalClaimsReport:
             findings.append(f"required file is missing: {path}")
 
     lean_files = sorted((ROOT / "formal" / "lean" / "VETCore").glob("*.lean"))
+    lean_files += sorted((ROOT / "formal" / "lean" / "CapacityCore").glob("*.lean"))
     lean_text = "\n".join(path.read_text(encoding="utf-8") for path in lean_files)
-    for term in ("sorry", "admit"):
+    for term in ("sorry", "admit", "axiom"):
         if re.search(term, lean_text):
             findings.append(f"Lean source contains blocked proof token: {term}")
     for theorem in REQUIRED_THEOREMS:

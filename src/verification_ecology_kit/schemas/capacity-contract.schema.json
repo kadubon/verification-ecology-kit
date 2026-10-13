@@ -1,0 +1,438 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verification-ecology-kit.org/schemas/capacity-contract.schema.json",
+  "title": "capacity-contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "scope",
+    "time_origin",
+    "slot_seconds",
+    "horizon",
+    "max_candidates",
+    "max_events",
+    "resources",
+    "services",
+    "work",
+    "actions",
+    "scenarios",
+    "schema_version",
+    "semantics",
+    "work_unit",
+    "observation_policy"
+  ],
+  "properties": {
+    "contract_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "time_origin": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "format": "date-time"
+    },
+    "slot_seconds": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,6}(/[1-9][0-9]{0,6})?$"
+    },
+    "horizon": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16
+    },
+    "max_candidates": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000
+    },
+    "max_events": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1024
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id",
+          "unit",
+          "kind",
+          "capacity"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "kind": {
+            "enum": [
+              "pool",
+              "budget"
+            ]
+          },
+          "capacity": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "minItems": 1,
+            "maxItems": 16
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 8
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "service_id",
+          "version",
+          "domain",
+          "checks",
+          "interface",
+          "valid_until",
+          "exposures",
+          "dependence_known",
+          "support_refs",
+          "assumptions",
+          "evidence_basis"
+        ],
+        "properties": {
+          "service_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "domain": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "minItems": 1,
+            "maxItems": 32
+          },
+          "interface": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "valid_until": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "exposures": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "minItems": 0,
+            "maxItems": 32
+          },
+          "dependence_known": {
+            "type": "boolean"
+          },
+          "support_refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "minItems": 1,
+            "maxItems": 32
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "minItems": 1,
+            "maxItems": 32
+          },
+          "evidence_basis": {
+            "enum": [
+              "synthetic",
+              "declared-model",
+              "observed-record"
+            ]
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 16
+    },
+    "work": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "work_id",
+          "residual_id",
+          "subject_digest",
+          "input_digest",
+          "rule_version",
+          "check",
+          "domain",
+          "bundle",
+          "arrival",
+          "deadline",
+          "protected",
+          "required",
+          "predecessors",
+          "separate_from"
+        ],
+        "properties": {
+          "work_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "residual_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "subject_digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "input_digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "rule_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "check": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "domain": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "bundle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "arrival": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "deadline": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "protected": {
+            "type": "boolean"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "predecessors": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "minItems": 0,
+            "maxItems": 32
+          },
+          "separate_from": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "minItems": 0,
+            "maxItems": 32
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 12
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "action_id",
+          "work_id",
+          "service_id",
+          "kind",
+          "duration",
+          "costs",
+          "requires_success",
+          "requires_negative"
+        ],
+        "properties": {
+          "action_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "work_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "service_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "kind": {
+            "enum": [
+              "check",
+              "repair",
+              "construct",
+              "calibrate",
+              "counter-check",
+              "activate"
+            ]
+          },
+          "duration": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 16
+          },
+          "costs": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "minItems": 1,
+            "maxItems": 8
+          },
+          "requires_success": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "minItems": 0,
+            "maxItems": 32
+          },
+          "requires_negative": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "minItems": 0,
+            "maxItems": 32
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 12
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scenario_id",
+          "outcomes",
+          "assumption"
+        ],
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "positive",
+                "negative",
+                "inconclusive",
+                "invalid",
+                "timeout"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 12
+          },
+          "assumption": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 8
+    },
+    "schema_version": {
+      "const": "vek.capacity.contract.v1"
+    },
+    "semantics": {
+      "const": "nonpreemptive-integer-slots"
+    },
+    "work_unit": {
+      "const": "registered-check"
+    },
+    "observation_policy": {
+      "const": "replan-after-admitted-result"
+    }
+  }
+}

@@ -40,3 +40,9 @@ path.
 Audits always read an input file. Packet audits accept a single packet, a list
 of packets, a state with `packet_population`, or a bundle whose objects include
 `schema_id: "verifier-packet"`.
+
+## Experimental capacity profile
+
+See [capacity semantics](capacity.md), [capacity formal boundary](capacity_formal.md),
+[interchange](capacity_interchange.md), and [release evidence](capacity_release.md).
+This additive profile does not broaden the established VET-Core formal claim.

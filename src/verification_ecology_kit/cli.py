@@ -57,6 +57,12 @@ def main(argv: list[str] | None = None) -> int:
 def _exit_code(result: object) -> int:
     if not isinstance(result, dict):
         return 0
+    search = result.get("search")
+    if isinstance(search, dict):
+        if search.get("status") == "unknown":
+            return 3
+        if search.get("status") == "infeasible":
+            return 4
     decision = result.get("decision")
     if decision in {"fail", "reject", "quarantine"}:
         return 1
@@ -71,6 +77,10 @@ def _exit_code(result: object) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="vek")
     sub = parser.add_subparsers(required=True)
+
+    from verification_ecology_kit.capacity.cli import register
+
+    register(sub)
 
     sub.add_parser("version").set_defaults(func=lambda _args: {"version": __version__})
     sub.add_parser("doctor").set_defaults(func=_doctor)

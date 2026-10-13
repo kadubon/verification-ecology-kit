@@ -1,5 +1,10 @@
 # verification-ecology-kit
 
+An experimental opt-in [verification-capacity profile](docs/capacity.md) adds finite
+shared-resource allocation, paid model-only verifier development, independent schedule
+checking and explicit residual/work accounting. Try `vek capacity example investment`.
+It does not establish observed service capacity, scientific truth or execution authority.
+
 verification-ecology-kit provides a complete formal operational semantics for the VET-Core implemented by this package, with machine-checked safety theorems and Python conformance tests against the formal semantics.
 
 It is built for a simple problem: verification work often produces more than
@@ -11,6 +16,14 @@ It is also a practical Python and JSON implementation for recording, checking,
 and auditing verification evidence. The formal claim is limited to the
 implemented VET-Core language. It does not prove every statement in Verifier
 Ecology Theory.
+
+## Agent Skill
+
+This repository includes an Agent Skills-compatible workflow at
+[`.agents/skills/verification-ecology-kit/SKILL.md`](.agents/skills/verification-ecology-kit/SKILL.md).
+Compatible agents can discover it from this repository, or copy it to a supported user skills
+directory such as `~/.agents/skills/verification-ecology-kit/`. The canonical implementation remains
+this repository.
 
 It helps you answer practical questions such as:
 

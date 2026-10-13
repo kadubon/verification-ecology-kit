@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.3.0
+
+- Add experimental opt-in finite verification-capacity contracts, typed shared pools
+  and budgets, bounded exact allocation, independent schedule checking and joint
+  synthetic/model outcomes. Existing runtime defaults and encodings are unchanged.
+- Integrate explicit work/reservation/result replay with ecology storage, core evidence
+  conformance, deduplicated follow-ups and preserved negative/repair residuals.
+- Add paid model-only verifier development, repair/revalidation and adverse queue
+  examples, versioned capacity reports and pinned CCR proposals/partial CAIT envelopes.
+- Add a separate Lean resource-accounting core, Python conformance and six bounded
+  fault-injection controls. Make Lean build targets explicit and repair previously
+  uncompiled VET-Core proof scripts without changing theorem statements or predicates.
+- Publish tested artifacts by download and SHA-256 verification, eliminating the
+  publisher rebuild. Add offline installed-wheel checks on Windows/macOS and Linux.
+- No external empirical acceleration experiment was performed. Scheduling or local
+  checking does not establish scientific truth, independence, capacity growth or authority.
+
 ## 1.2.0
 
 - Added a Lean 4 VET-Core formalization covering syntax, static semantics,

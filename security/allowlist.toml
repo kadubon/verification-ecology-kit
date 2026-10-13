@@ -1,10 +1,15 @@
-# Public empty allowlist used by CI and examples.
+# Public allowlist used by CI and examples.
 # Do not add private paths, emails, tokens, or local machine identifiers here.
 local_info = []
 emails = []
 paths = []
 
 [secrets]
-values = []
+# Exact public Actions URL fragments emitted by the entropy tokenizer in the
+# 1.3.0 release evidence. These identify public CI runs, not credentials.
+values = [
+  "com/kadubon/verification-ecology-kit/actions/runs/34700811743",
+  "com/kadubon/verification-ecology-kit/actions/runs/34725158272",
+]
 regexes = []
 paths = []

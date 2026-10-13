@@ -3,6 +3,11 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - Concepts: concepts.md
+  - Experimental Capacity: capacity.md
+  - Capacity Interchange: capacity_interchange.md
+  - Capacity Formal Boundary: capacity_formal.md
+  - Capacity Requirements: capacity_requirements.md
+  - Capacity Release Evidence: capacity_release.md
   - Theory Mapping: theory_mapping.md
   - Formal Semantics: formal_semantics.md
   - Formal Claims: formal_claims.md

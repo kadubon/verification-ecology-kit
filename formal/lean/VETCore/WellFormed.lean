@@ -14,10 +14,13 @@ def ResidualPreserved (p : VerifierPacket) : Prop :=
 def BoundaryPreserved (p : VerifierPacket) : Prop :=
   p.hasBoundaryWork = true ∨ HasResidualKind
     { packets := [], counterPackets := [], boundaries := [], reachabilityCertificates := [],
-      counterexampleChannels := [], authorityRecords := [], ledger := { residuals := p.residuals,
-      events := [], traceCertificateAccepted := true }, aperture := { feasibleQuestions := 0,
-      feasibleCounters := 0, debtResidualPresent := false, boundaryExclusionJustified := false,
-      preserved := true }, frontier := { frontierSize := 0, expanded := false, evidenceRefs := [] },
+      counterexampleChannels := [], authorityRecords := [],
+      ledger := { residuals := p.residuals,
+                  events := [], traceCertificateAccepted := true },
+      aperture := { feasibleQuestions := 0,
+                    feasibleCounters := 0, debtResidualPresent := false,
+                    boundaryExclusionJustified := false, preserved := true },
+      frontier := { frontierSize := 0, expanded := false, evidenceRefs := [] },
       packetCount := 0 } ResidualKind.unexcluded
 
 def HasCounterPacketOrResidual (p : VerifierPacket) : Prop :=

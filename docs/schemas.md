@@ -25,6 +25,26 @@
 - id: `https://vet.example/schema/boundary-record.schema.json`
 - type: `object`
 
+## capacity-contract.schema.json
+
+- id: `https://verification-ecology-kit.org/schemas/capacity-contract.schema.json`
+- type: `object`
+
+## capacity-plan.schema.json
+
+- id: `https://verification-ecology-kit.org/schemas/capacity-plan.schema.json`
+- type: `object`
+
+## capacity-report.schema.json
+
+- id: `https://verification-ecology-kit.org/schemas/capacity-report.schema.json`
+- type: `object`
+
+## capacity-result.schema.json
+
+- id: `https://verification-ecology-kit.org/schemas/capacity-result.schema.json`
+- type: `object`
+
 ## carrier-registry.schema.json
 
 - id: `https://vet.example/schema/carrier-registry.schema.json`

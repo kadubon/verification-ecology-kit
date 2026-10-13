@@ -1,5 +1,9 @@
 # Contributing
 
+For capacity changes also run `uv run python scripts/check_capacity_faults.py`,
+`uv run pytest tests/formal --no-cov`, and `lake build` from `formal/lean`.
+Preserve the experimental profile and [accounting boundary](docs/capacity_formal.md).
+
 Use `uv sync --all-extras --dev` before development. Run the full local checks before submitting changes:
 
 ```bash

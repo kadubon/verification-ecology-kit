@@ -70,3 +70,9 @@ The following remain outside the formal claim:
 
 These items must be handled by ordinary tests, review, audit, security gates,
 or residual obligations.
+
+## Experimental capacity profile
+
+See [capacity semantics](capacity.md), [capacity formal boundary](capacity_formal.md),
+[interchange](capacity_interchange.md), and [release evidence](capacity_release.md).
+This additive profile does not broaden the established VET-Core formal claim.
